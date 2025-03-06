@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+'use client';
+
+import React from 'react';
 import axios from 'axios';
 
 interface StockPriceProps {
@@ -12,11 +14,11 @@ interface PriceData {
 }
 
 export default function StockPrice({ symbol }: StockPriceProps) {
-  const [priceData, setPriceData] = useState<PriceData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [priceData, setPriceData] = React.useState<PriceData | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const fetchPrice = async () => {
       try {
         const response = await axios.get(`http://localhost:8000/stocks/${symbol}/price`);

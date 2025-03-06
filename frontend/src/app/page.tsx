@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import React from 'react';
 import StockPrice from '@/components/StockPrice';
 import StockChart from '@/components/StockChart';
 
 export default function Home() {
-  const [watchlist] = useState(['AAPL', 'GOOGL', 'MSFT', 'AMZN']);
+  const [watchlist] = React.useState(['AAPL', 'GOOGL', 'MSFT', 'AMZN']);
 
   return (
     <main className="min-h-screen p-8 bg-gray-100">
