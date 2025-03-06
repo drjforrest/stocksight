@@ -39,9 +39,22 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 from backend.models.stock import Base
 
-# Set the schema for the metadata
-for table in Base.metadata.tables.values():
-    table.schema = SCHEMA
+def include_object(object, name, type_, reflected, compare_to):
+    """Determine which database objects should be included in the autogeneration."""
+    # Include objects in our schema and exclude others
+    if type_ == "table":
+        return object.schema == SCHEMA
+    return True
+
+def process_revision_directives(context, revision, directives):
+    """Process revision directives to ensure schema is set correctly."""
+    if config.cmd_opts and config.cmd_opts.autogenerate:
+        script = directives[0]
+        if script.upgrade_ops.ops:
+            # Set schema for create_table operations
+            for op in script.upgrade_ops.ops:
+                if hasattr(op, 'schema') and op.schema is None:
+                    op.schema = SCHEMA
 
 target_metadata = Base.metadata
 
@@ -54,7 +67,9 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         version_table_schema=SCHEMA,
-        include_schemas=True
+        include_schemas=True,
+        include_object=include_object,
+        process_revision_directives=process_revision_directives
     )
 
     with context.begin_transaction():
@@ -82,7 +97,9 @@ def run_migrations_online() -> None:
             connection=connection,
             target_metadata=target_metadata,
             version_table_schema=SCHEMA,
-            include_schemas=True
+            include_schemas=True,
+            include_object=include_object,
+            process_revision_directives=process_revision_directives
         )
 
         with context.begin_transaction():

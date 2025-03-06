@@ -1,3 +1,35 @@
+# StockSight
+
+A FastAPI-based API for biotech stock market data and analysis.
+
+## Installation
+
+```bash
+pip install -e .
+```
+
+## Running the Application
+
+```bash
+uvicorn backend.main:app --reload
+```
+
+## API Documentation
+
+Once running, visit:
+- http://localhost:8000/docs for Swagger UI
+- http://localhost:8000/redoc for ReDoc
+
+## Features
+
+- Real-time stock price data
+- Historical price analysis
+- Company information
+- Dividend history
+- Stock splits
+- Market indices tracking
+- Exchange information
+
 # StockSight Project Setup Documentation
 
 ## Project Overview

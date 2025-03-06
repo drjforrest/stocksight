@@ -1,0 +1,7 @@
+README.md
+pyproject.toml
+stocksight_backend.egg-info/PKG-INFO
+stocksight_backend.egg-info/SOURCES.txt
+stocksight_backend.egg-info/dependency_links.txt
+stocksight_backend.egg-info/requires.txt
+stocksight_backend.egg-info/top_level.txt
