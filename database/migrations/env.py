@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 sys.path.append(project_root)
 
-# Load environment variables from backend/.env file
+# Load environment variables from .env file
 dotenv_path = os.path.join(project_root, 'backend', '.env')
 load_dotenv(dotenv_path)
 
@@ -37,7 +37,7 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from backend.config.database import Base
+from config.database import Base
 
 def include_object(object, name, type_, reflected, compare_to):
     """Determine which database objects should be included in the autogeneration."""

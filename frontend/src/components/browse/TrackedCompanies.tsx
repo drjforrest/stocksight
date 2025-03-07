@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaRss, FaTrash, FaNewspaper, FaPlus, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import CompetitorSearch from './CompetitorSearch';
+import CompetitorSearch from '../CompetitorSearch';
 import { Carousel } from 'react-responsive-carousel';
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 
@@ -46,7 +46,7 @@ export default function TrackedCompanies() {
 
   const fetchTrackedCompanies = async () => {
     try {
-      const response = await axios.get(`/api/tracked/${userId}`);
+      const response = await axios.get(`/tracked/${userId}`);
       setTracked(response.data);
       fetchNewsForCompanies(response.data);
       fetchCompanyFigures(response.data);
@@ -61,11 +61,10 @@ export default function TrackedCompanies() {
   const fetchCompanyFigures = async (companies: string[]) => {
     try {
       const figuresPromises = companies.map(async (symbol) => {
-        const response = await axios.get(`/api/companies/${symbol}/figures`);
+        const response = await axios.get(`/companies/${symbol}/figures`);
         return response.data;
       });
       const figures = await Promise.all(figuresPromises);
-      // Sort by competitor score
       figures.sort((a, b) => b.competitor_score - a.competitor_score);
       setCompanyFigures(figures);
     } catch (err) {
@@ -77,7 +76,7 @@ export default function TrackedCompanies() {
   const fetchNewsForCompanies = async (companies: string[]) => {
     try {
       const newsPromises = companies.map(symbol =>
-        axios.get(`/api/news/articles/${symbol}`).then(response => ({
+        axios.get(`/news/articles/${symbol}`).then(response => ({
           symbol,
           articles: response.data
         }))
@@ -92,7 +91,7 @@ export default function TrackedCompanies() {
 
   const handleCompetitorSelect = async (competitor: any) => {
     try {
-      await axios.post(`/api/tracked/${userId}/${competitor.symbol}`);
+      await axios.post(`/tracked/${userId}/${competitor.symbol}`);
       setShowSearch(false);
       fetchTrackedCompanies();
     } catch (err: any) {
@@ -103,7 +102,7 @@ export default function TrackedCompanies() {
 
   const removeCompany = async (symbol: string) => {
     try {
-      await axios.delete(`/api/tracked/${userId}/${symbol}`);
+      await axios.delete(`/tracked/${userId}/${symbol}`);
       setTracked(prev => prev.filter(s => s !== symbol));
       setNews(prev => prev.filter(n => n.symbol !== symbol));
       setCompanyFigures(prev => prev.filter(c => c.symbol !== symbol));

@@ -35,12 +35,23 @@ class MarketDataService:
         """Initialize the MarketDataService with a MarketStack client."""
         self.client = MarketStackClient(api_key=settings.marketstack_api_key)
 
+    async def cleanup(self):
+        """Cleanup resources."""
+        await self.client.cleanup()
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.cleanup()
+
     async def get_intraday_data(
         self,
         symbol: str,
         interval: str = '1min',
         date_from: Optional[datetime] = None,
-        date_to: Optional[datetime] = None
+        date_to: Optional[datetime] = None,
+        limit: int = 100
     ) -> List[Dict[str, Any]]:
         """Get intraday price data for a given symbol.
         
@@ -49,6 +60,7 @@ class MarketDataService:
             interval (str, optional): Time interval between data points. Defaults to '1min'
             date_from (datetime, optional): Start date for historical data
             date_to (datetime, optional): End date for historical data
+            limit (int, optional): Maximum number of results to return
             
         Returns:
             List[Dict[str, Any]]: List of intraday price data points containing:
@@ -63,7 +75,8 @@ class MarketDataService:
             symbols=[symbol],
             interval=interval,
             date_from=date_from,
-            date_to=date_to
+            date_to=date_to,
+            limit=limit
         )
         return response.get('data', [])
 
@@ -71,7 +84,8 @@ class MarketDataService:
         self,
         symbol: str,
         date_from: Optional[datetime] = None,
-        date_to: Optional[datetime] = None
+        date_to: Optional[datetime] = None,
+        limit: int = 100
     ) -> List[Dict[str, Any]]:
         """Get end-of-day price data for a given symbol.
         
@@ -79,6 +93,7 @@ class MarketDataService:
             symbol (str): Stock symbol (e.g., 'AAPL')
             date_from (datetime, optional): Start date for historical data
             date_to (datetime, optional): End date for historical data
+            limit (int, optional): Maximum number of results to return
             
         Returns:
             List[Dict[str, Any]]: List of daily price data points containing:
@@ -93,7 +108,8 @@ class MarketDataService:
         response = await self.client.get_eod_data(
             symbols=[symbol],
             date_from=date_from,
-            date_to=date_to
+            date_to=date_to,
+            limit=limit
         )
         return response.get('data', [])
 
@@ -138,7 +154,8 @@ class MarketDataService:
         self,
         index_symbol: str,
         date_from: Optional[datetime] = None,
-        date_to: Optional[datetime] = None
+        date_to: Optional[datetime] = None,
+        limit: int = 100
     ) -> List[Dict[str, Any]]:
         """Get historical data for a market index.
         
@@ -146,6 +163,7 @@ class MarketDataService:
             index_symbol (str): Index symbol (e.g., '^GSPC' for S&P 500)
             date_from (datetime, optional): Start date for historical data
             date_to (datetime, optional): End date for historical data
+            limit (int, optional): Maximum number of results to return
             
         Returns:
             List[Dict[str, Any]]: List of index data points containing:
@@ -154,10 +172,11 @@ class MarketDataService:
                 - change: Daily change
                 - change_percent: Daily change percentage
         """
-        response = await self.client.get_indices(
+        response = await self.client.get_index_data(
             symbols=[index_symbol],
             date_from=date_from,
-            date_to=date_to
+            date_to=date_to,
+            limit=limit
         )
         return response.get('data', [])
 
@@ -165,7 +184,8 @@ class MarketDataService:
         self,
         symbol: str,
         date_from: Optional[datetime] = None,
-        date_to: Optional[datetime] = None
+        date_to: Optional[datetime] = None,
+        limit: int = 100
     ) -> List[Dict[str, Any]]:
         """Get dividend history for a given symbol.
         
@@ -173,6 +193,7 @@ class MarketDataService:
             symbol (str): Stock symbol (e.g., 'AAPL')
             date_from (datetime, optional): Start date for dividend history
             date_to (datetime, optional): End date for dividend history
+            limit (int, optional): Maximum number of results to return
             
         Returns:
             List[Dict[str, Any]]: List of dividend events containing:
@@ -184,7 +205,8 @@ class MarketDataService:
         response = await self.client.get_dividends(
             symbols=[symbol],
             date_from=date_from,
-            date_to=date_to
+            date_to=date_to,
+            limit=limit
         )
         return response.get('data', [])
 
@@ -192,7 +214,8 @@ class MarketDataService:
         self,
         symbol: str,
         date_from: Optional[datetime] = None,
-        date_to: Optional[datetime] = None
+        date_to: Optional[datetime] = None,
+        limit: int = 100
     ) -> List[Dict[str, Any]]:
         """Get stock split history for a given symbol.
         
@@ -200,6 +223,7 @@ class MarketDataService:
             symbol (str): Stock symbol (e.g., 'AAPL')
             date_from (datetime, optional): Start date for split history
             date_to (datetime, optional): End date for split history
+            limit (int, optional): Maximum number of results to return
             
         Returns:
             List[Dict[str, Any]]: List of split events containing:
@@ -210,6 +234,27 @@ class MarketDataService:
         response = await self.client.get_splits(
             symbols=[symbol],
             date_from=date_from,
-            date_to=date_to
+            date_to=date_to,
+            limit=limit
+        )
+        return response.get('data', [])
+
+    async def search_symbols(
+        self,
+        query: str,
+        limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """Search for stock symbols and companies.
+        
+        Args:
+            query (str): Search term for company name or symbol
+            limit (int, optional): Maximum number of results to return
+            
+        Returns:
+            List[Dict[str, Any]]: List of matching companies and symbols
+        """
+        response = await self.client.get_tickers(
+            search=query,
+            limit=limit
         )
         return response.get('data', []) 

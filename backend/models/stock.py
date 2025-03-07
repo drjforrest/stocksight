@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Ind
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from backend.config.database import Base
+from config.database import Base
 
 class StockPrice(Base):
     """Model for storing stock price data."""

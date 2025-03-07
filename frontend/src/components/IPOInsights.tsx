@@ -45,8 +45,13 @@ interface IPOData {
 
 type ChartType = 'bar' | 'horizontal-bar' | 'radar';
 
-export default function IPOInsights() {
-  const [data, setData] = useState<IPOData | null>(null);
+interface IPOInsightsProps {
+  data: any[];
+  fullView?: boolean;
+}
+
+export default function IPOInsights({ data, fullView = false }: IPOInsightsProps) {
+  const [ipoData, setIPOData] = useState<IPOData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<'30d' | '90d' | '180d' | '365d'>('90d');
@@ -62,7 +67,7 @@ export default function IPOInsights() {
             therapeutic_area: therapeuticArea !== 'all' ? therapeuticArea : undefined
           }
         });
-        setData(response.data);
+        setIPOData(response.data);
         setError(null);
       } catch (err) {
         setError('Failed to fetch IPO data');
@@ -87,7 +92,7 @@ export default function IPOInsights() {
     </Card>
   );
   
-  if (!data) return null;
+  if (!ipoData) return null;
 
   const getChartData = () => {
     const baseData = {
@@ -95,7 +100,7 @@ export default function IPOInsights() {
       datasets: [
         {
           label: 'IPO Insights',
-          data: [data.completion_rate, data.withdrawal_rate, data.avg_price_performance],
+          data: [ipoData.completion_rate, ipoData.withdrawal_rate, ipoData.avg_price_performance],
           backgroundColor: [
             'rgba(76, 175, 80, 0.8)',
             'rgba(244, 67, 54, 0.8)',
@@ -245,17 +250,17 @@ export default function IPOInsights() {
       <div className="grid grid-cols-2 gap-4 mt-6">
         <div className="bg-gray-50 p-4 rounded-lg">
           <h3 className="font-semibold mb-2">Summary Statistics</h3>
-          <p>Total IPOs: {data.total_ipos}</p>
-          <p>Success Rate: {(data.completion_rate * 100).toFixed(1)}%</p>
-          <p>Average Performance: {(data.avg_price_performance * 100).toFixed(1)}%</p>
+          <p>Total IPOs: {ipoData.total_ipos}</p>
+          <p>Success Rate: {(ipoData.completion_rate * 100).toFixed(1)}%</p>
+          <p>Average Performance: {(ipoData.avg_price_performance * 100).toFixed(1)}%</p>
         </div>
-        {data.statistical_analysis && (
+        {ipoData.statistical_analysis && (
           <div className="bg-gray-50 p-4 rounded-lg">
             <h3 className="font-semibold mb-2">Statistical Analysis</h3>
-            <p>T-Statistic: {data.statistical_analysis.t_statistic.toFixed(2)}</p>
-            <p>P-Value: {data.statistical_analysis.p_value.toFixed(4)}</p>
-            <p className={data.statistical_analysis.significant ? 'text-green-600' : 'text-yellow-600'}>
-              {data.statistical_analysis.significant ? 'Statistically Significant' : 'Not Statistically Significant'}
+            <p>T-Statistic: {ipoData.statistical_analysis.t_statistic.toFixed(2)}</p>
+            <p>P-Value: {ipoData.statistical_analysis.p_value.toFixed(4)}</p>
+            <p className={ipoData.statistical_analysis.significant ? 'text-green-600' : 'text-yellow-600'}>
+              {ipoData.statistical_analysis.significant ? 'Statistically Significant' : 'Not Statistically Significant'}
             </p>
           </div>
         )}

@@ -14,25 +14,25 @@ from services.stock import StockService
 from config.database import get_db
 from services.market_data import MarketDataService
 from models.stock import StockPrice, CompanyInfo
+from api.auth import get_current_user
 
 router = APIRouter(
     prefix="/stocks",
     tags=["stocks"],
     responses={
+        401: {"description": "Not authenticated"},
         404: {"description": "Resource not found"},
         500: {"description": "Internal server error"},
         429: {"description": "Too many requests to MarketStack API"}
     },
 )
 
-# Create market data service instance
-market_service = MarketDataService()
-
 # Stock Prices Endpoints
 @router.post("/prices", response_model=StockPriceResponse)
 async def create_stock_price(
     price: StockPriceCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Create a new stock price entry.
@@ -47,14 +47,16 @@ async def create_stock_price(
     - **422**: Validation error if price data is invalid
     - **500**: Database error
     """
-    return await StockService(db).create_stock_price(price)
+    async with StockService(db) as stock_service:
+        return await stock_service.create_stock_price(price)
 
 @router.get("/prices/{symbol}", response_model=List[StockPriceResponse])
 async def get_stock_prices(
     symbol: str = Path(..., description="Stock symbol to fetch prices for"),
     start_date: Optional[datetime] = Query(None, description="Start date for price range (YYYY-MM-DD)"),
     end_date: Optional[datetime] = Query(None, description="End date for price range (YYYY-MM-DD)"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Get historical stock prices for a symbol within a date range.
@@ -73,12 +75,14 @@ async def get_stock_prices(
     /stocks/prices/GOOGL?start_date=2024-01-01&end_date=2024-02-01
     ```
     """
-    return await StockService(db).get_stock_prices(symbol, start_date, end_date)
+    async with StockService(db) as stock_service:
+        return await stock_service.get_stock_prices(symbol, start_date, end_date)
 
 @router.get("/{symbol}/price")
 async def get_current_price(
     symbol: str = Path(..., description="Stock symbol to fetch current price for"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Get current stock price and save to database.
@@ -96,20 +100,21 @@ async def get_current_price(
     - **404**: Stock symbol not found
     - **429**: MarketStack API rate limit exceeded
     """
-    data = await market_service.get_intraday_data(symbol, interval='1min')
-    if not data:
-        raise HTTPException(status_code=404, detail="Stock not found")
-    
-    latest_price = data[0]
-    db_price = StockPrice(
-        symbol=symbol,
-        price=latest_price["close"],
-        timestamp=datetime.fromisoformat(latest_price["date"].replace('Z', '+00:00'))
-    )
-    db.add(db_price)
-    db.commit()
-    
-    return latest_price
+    async with MarketDataService() as market_service:
+        data = await market_service.get_intraday_data(symbol, interval='1min')
+        if not data:
+            raise HTTPException(status_code=404, detail="Stock not found")
+        
+        latest_price = data[0]
+        db_price = StockPrice(
+            symbol=symbol,
+            price=latest_price["close"],
+            timestamp=datetime.fromisoformat(latest_price["date"].replace('Z', '+00:00'))
+        )
+        db.add(db_price)
+        db.commit()
+        
+        return latest_price
 
 @router.get("/{symbol}/history")
 async def get_stock_history(
@@ -144,7 +149,8 @@ async def get_stock_history(
     end_date = datetime.now()
     start_date = end_date - timedelta(days=days)
     
-    return await market_service.get_eod_data(symbol, start_date, end_date)
+    async with MarketDataService() as market_service:
+        return await market_service.get_eod_data(symbol, start_date, end_date)
 
 # Company Info Endpoints
 @router.post("/companies", response_model=CompanyInfoResponse)
@@ -175,7 +181,8 @@ async def create_company_info(
     - **422**: Validation error if company data is invalid
     - **500**: Database error
     """
-    return await StockService(db).create_company_info(company)
+    async with StockService(db) as stock_service:
+        return await stock_service.create_company_info(company)
 
 @router.get("/companies/{symbol}", response_model=CompanyInfoResponse)
 async def get_company_info(
@@ -208,20 +215,21 @@ async def get_company_info(
     if db_info and (datetime.utcnow() - db_info.updated_at).days < 7:
         return db_info
     
-    company_data = await market_service.get_company_info(symbol)
-    if not company_data:
-        raise HTTPException(status_code=404, detail="Company not found")
-    
-    if db_info:
-        for key, value in company_data.items():
-            setattr(db_info, key, value)
-        db_info.updated_at = datetime.utcnow()
-    else:
-        db_info = CompanyInfo(**company_data)
-        db.add(db_info)
-    
-    db.commit()
-    return company_data
+    async with MarketDataService() as market_service:
+        company_data = await market_service.get_company_info(symbol)
+        if not company_data:
+            raise HTTPException(status_code=404, detail="Company not found")
+        
+        if db_info:
+            for key, value in company_data.items():
+                setattr(db_info, key, value)
+            db_info.updated_at = datetime.utcnow()
+        else:
+            db_info = CompanyInfo(**company_data)
+            db.add(db_info)
+        
+        db.commit()
+        return company_data
 
 @router.get("/companies", response_model=List[CompanyInfoResponse])
 async def list_companies(
@@ -247,7 +255,8 @@ async def list_companies(
     /stocks/companies?sector=Healthcare&country=GB
     ```
     """
-    return await StockService(db).list_companies(sector, country)
+    async with StockService(db) as stock_service:
+        return await stock_service.list_companies(sector, country)
 
 # Dividend History Endpoints
 @router.post("/dividends", response_model=DividendResponse)
@@ -273,7 +282,8 @@ async def create_dividend(
     - **422**: Validation error if dividend data is invalid
     - **500**: Database error
     """
-    return await StockService(db).create_dividend(dividend)
+    async with StockService(db) as stock_service:
+        return await stock_service.create_dividend(dividend)
 
 @router.get("/{symbol}/dividends")
 async def get_symbol_dividends(
@@ -307,10 +317,11 @@ async def get_symbol_dividends(
     end_date = datetime.now()
     start_date = end_date - timedelta(days=days)
     
-    data = await market_service.get_dividends(symbol, start_date, end_date)
-    if not data:
-        raise HTTPException(status_code=404, detail="Dividend data not found")
-    return data
+    async with MarketDataService() as market_service:
+        data = await market_service.get_dividends(symbol, start_date, end_date)
+        if not data:
+            raise HTTPException(status_code=404, detail="Dividend data not found")
+        return data
 
 # Stock Splits Endpoints
 @router.post("/splits", response_model=StockSplitResponse)
@@ -334,7 +345,8 @@ async def create_stock_split(
     - **422**: Validation error if split data is invalid
     - **500**: Database error
     """
-    return await StockService(db).create_stock_split(split)
+    async with StockService(db) as stock_service:
+        return await stock_service.create_stock_split(split)
 
 @router.get("/{symbol}/splits")
 async def get_symbol_splits(
@@ -367,10 +379,11 @@ async def get_symbol_splits(
     end_date = datetime.now()
     start_date = end_date - timedelta(days=days)
     
-    data = await market_service.get_splits(symbol, start_date, end_date)
-    if not data:
-        raise HTTPException(status_code=404, detail="Split data not found")
-    return data
+    async with MarketDataService() as market_service:
+        data = await market_service.get_splits(symbol, start_date, end_date)
+        if not data:
+            raise HTTPException(status_code=404, detail="Split data not found")
+        return data
 
 # Exchange Endpoints
 @router.post("/exchanges", response_model=ExchangeResponse)
@@ -397,7 +410,8 @@ async def create_exchange(
     - **422**: Validation error if exchange data is invalid
     - **500**: Database error
     """
-    return await StockService(db).create_exchange(exchange)
+    async with StockService(db) as stock_service:
+        return await stock_service.create_exchange(exchange)
 
 @router.get("/exchanges/{code}", response_model=ExchangeResponse)
 async def get_exchange(
@@ -421,7 +435,8 @@ async def get_exchange(
     Raises:
     - **404**: Exchange not found
     """
-    return await StockService(db).get_exchange(code)
+    async with StockService(db) as stock_service:
+        return await stock_service.get_exchange(code)
 
 @router.get("/exchanges")
 async def list_exchanges():
@@ -457,10 +472,11 @@ async def list_exchanges():
     - **404**: No exchanges found
     - **429**: MarketStack API rate limit exceeded
     """
-    exchanges = await market_service.get_exchanges()
-    if not exchanges:
-        raise HTTPException(status_code=404, detail="No exchanges found")
-    return exchanges
+    async with MarketDataService() as market_service:
+        exchanges = await market_service.get_exchanges()
+        if not exchanges:
+            raise HTTPException(status_code=404, detail="No exchanges found")
+        return exchanges
 
 # Market Data Endpoints
 @router.get("/market/search")
@@ -499,4 +515,5 @@ async def search_symbols(
     - **422**: Invalid query parameter
     - **429**: MarketStack API rate limit exceeded
     """
-    return await StockService(db).search_symbols(query, limit) 
+    async with StockService(db) as stock_service:
+        return await stock_service.search_symbols(query, limit) 

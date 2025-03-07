@@ -10,6 +10,7 @@ BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 class Settings(BaseSettings):
     # API Settings
     marketstack_api_key: str
+    serper_api_key: str  # Serper.dev API key for fetching news articles
     api_rate_limit: int = 5  # requests per second
     
     # Database Settings
@@ -37,6 +38,11 @@ class Settings(BaseSettings):
     
     # IPO Settings
     ipo_check_interval: int = 86400  # 24 hours in seconds
+
+    # JWT Settings
+    jwt_secret_key: str = "your-secret-key-here"  # Should be set in .env
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 30
     
     class Config:
         env_file = os.path.join(BACKEND_DIR, ".env")

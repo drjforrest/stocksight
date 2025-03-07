@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react';
-import { AppBar, Toolbar, Typography, InputBase, IconButton, Box, Tabs, Tab, useTheme } from '@mui/material';
+import { useRouter, usePathname } from 'next/navigation';
+import { AppBar, Toolbar, Typography, InputBase, Box, Tabs, Tab, useTheme } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
@@ -55,12 +58,32 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   minHeight: '48px',
 }));
 
+// Map paths to tab indices
+const pathToIndex: { [key: string]: number } = {
+  '/': 0,
+  '/browse': 1,
+  '/tracked': 2,
+  '/analytics': 3,
+};
+
+// Map indices to paths
+const indexToPath: { [key: number]: string } = {
+  0: '/',
+  1: '/browse',
+  2: '/tracked',
+  3: '/analytics',
+};
+
 export function Navbar() {
-  const [value, setValue] = React.useState(0);
+  const router = useRouter();
+  const pathname = usePathname();
   const theme = useTheme();
+  
+  // Get current tab value from pathname
+  const currentValue = pathToIndex[pathname] || 0;
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
-    setValue(newValue);
+    router.push(indexToPath[newValue]);
   };
 
   return (
@@ -78,14 +101,16 @@ export function Navbar() {
             letterSpacing: '.2rem',
             color: 'primary.main',
             textDecoration: 'none',
+            cursor: 'pointer',
           }}
+          onClick={() => router.push('/')}
         >
           STOCKSIGHT
         </Typography>
 
         <Box sx={{ flexGrow: 1 }}>
           <Tabs 
-            value={value} 
+            value={currentValue} 
             onChange={handleChange}
             sx={{
               '& .MuiTabs-indicator': {

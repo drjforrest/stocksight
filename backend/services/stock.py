@@ -16,6 +16,16 @@ class StockService:
         self.db = db
         self.market_data = MarketDataService()
 
+    async def cleanup(self):
+        """Cleanup resources."""
+        await self.market_data.cleanup()
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.cleanup()
+
     async def create_stock_price(self, price_data: StockPriceCreate) -> StockPrice:
         """Create a new stock price entry."""
         db_price = StockPrice(**price_data.model_dump())

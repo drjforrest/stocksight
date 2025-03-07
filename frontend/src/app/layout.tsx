@@ -15,7 +15,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
-        {children} {/* No <Layout> here! Page.tsx handles it */}
+        <Layout>
+          {children}
+        </Layout>
       </body>
     </html>
   );

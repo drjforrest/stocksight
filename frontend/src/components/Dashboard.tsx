@@ -1,4 +1,7 @@
-import React, { useState } from "react";
+'use client';
+
+import React, { useState, useEffect } from "react";
+import axios from 'axios';
 import StockChart from "./StockChart";
 import MarketTrends from "./MarketTrends";
 import IPOInsights from "./IPOInsights";
@@ -6,14 +9,131 @@ import { Card, CardContent } from "./ui/card";
 
 type TabType = 'overview' | 'market' | 'ipo';
 
+interface MarketData {
+  trends: any[];
+  loading: boolean;
+  error: string | null;
+}
+
+interface StockData {
+  prices: any[];
+  loading: boolean;
+  error: string | null;
+}
+
+interface IPOData {
+  listings: any[];
+  loading: boolean;
+  error: string | null;
+}
+
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [marketData, setMarketData] = useState<MarketData>({
+    trends: [],
+    loading: true,
+    error: null
+  });
+  const [stockData, setStockData] = useState<StockData>({
+    prices: [],
+    loading: true,
+    error: null
+  });
+  const [ipoData, setIPOData] = useState<IPOData>({
+    listings: [],
+    loading: true,
+    error: null
+  });
+
+  // Fetch market data
+  useEffect(() => {
+    const fetchMarketData = async () => {
+      try {
+        const response = await axios.get('/api/market/trends');
+        setMarketData({
+          trends: response.data,
+          loading: false,
+          error: null
+        });
+      } catch (err) {
+        setMarketData(prev => ({
+          ...prev,
+          loading: false,
+          error: 'Failed to fetch market data'
+        }));
+      }
+    };
+
+    fetchMarketData();
+  }, []);
+
+  // Fetch stock data
+  useEffect(() => {
+    const fetchStockData = async () => {
+      try {
+        const response = await axios.get('/api/stocks/AAPL/prices');
+        setStockData({
+          prices: response.data,
+          loading: false,
+          error: null
+        });
+      } catch (err) {
+        setStockData(prev => ({
+          ...prev,
+          loading: false,
+          error: 'Failed to fetch stock data'
+        }));
+      }
+    };
+
+    fetchStockData();
+  }, []);
+
+  // Fetch IPO data
+  useEffect(() => {
+    const fetchIPOData = async () => {
+      try {
+        const response = await axios.get('/api/ipos');
+        setIPOData({
+          listings: response.data,
+          loading: false,
+          error: null
+        });
+      } catch (err) {
+        setIPOData(prev => ({
+          ...prev,
+          loading: false,
+          error: 'Failed to fetch IPO data'
+        }));
+      }
+    };
+
+    fetchIPOData();
+  }, []);
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
     { id: 'market', label: 'Market Trends' },
     { id: 'ipo', label: 'IPO Insights' }
   ];
+
+  const renderLoadingState = () => (
+    <div className="animate-pulse flex space-x-4">
+      <div className="flex-1 space-y-4 py-1">
+        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+        <div className="space-y-3">
+          <div className="h-4 bg-gray-200 rounded"></div>
+          <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderErrorState = (message: string) => (
+    <div className="bg-red-50 p-4 rounded-md">
+      <p className="text-red-600">{message}</p>
+    </div>
+  );
 
   return (
     <div className="p-6">
@@ -44,21 +164,27 @@ export default function Dashboard() {
           <Card>
             <CardContent>
               <h2 className="text-xl font-bold mb-4">Stock Performance</h2>
-              <StockChart symbol="AAPL" data={[]} />
+              {stockData.loading ? renderLoadingState() :
+               stockData.error ? renderErrorState(stockData.error) :
+               <StockChart symbol="AAPL" data={stockData.prices} />}
             </CardContent>
           </Card>
           
           <Card>
             <CardContent>
               <h2 className="text-xl font-bold mb-4">Market Summary</h2>
-              <MarketTrends />
+              {marketData.loading ? renderLoadingState() :
+               marketData.error ? renderErrorState(marketData.error) :
+               <MarketTrends data={marketData.trends} />}
             </CardContent>
           </Card>
           
           <Card>
             <CardContent>
               <h2 className="text-xl font-bold mb-4">Recent IPOs</h2>
-              <IPOInsights />
+              {ipoData.loading ? renderLoadingState() :
+               ipoData.error ? renderErrorState(ipoData.error) :
+               <IPOInsights data={ipoData.listings} />}
             </CardContent>
           </Card>
         </div>
@@ -68,7 +194,9 @@ export default function Dashboard() {
         <div className="w-full">
           <Card>
             <CardContent>
-              <MarketTrends />
+              {marketData.loading ? renderLoadingState() :
+               marketData.error ? renderErrorState(marketData.error) :
+               <MarketTrends data={marketData.trends} fullView />}
             </CardContent>
           </Card>
         </div>
@@ -78,7 +206,9 @@ export default function Dashboard() {
         <div className="w-full">
           <Card>
             <CardContent>
-              <IPOInsights />
+              {ipoData.loading ? renderLoadingState() :
+               ipoData.error ? renderErrorState(ipoData.error) :
+               <IPOInsights data={ipoData.listings} fullView />}
             </CardContent>
           </Card>
         </div>

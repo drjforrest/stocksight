@@ -7,8 +7,8 @@ from pathlib import Path
 if __name__ == "__main__":
     sys.path.append(str(Path(__file__).parent.parent))
 
-from api.routes import stock, indices, competitors, ipo, news
-from api.routes.endpoints import tracked, rss, companies, browse, news_endpoints
+from api.routes import stock, indices, competitors, ipo, news, market, auth
+from api.routes.endpoints import feature_flags, tracked, rss, companies, browse, news_endpoints
 
 app = FastAPI(
     title="StockSight API",
@@ -85,13 +85,16 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(stock.router)
-app.include_router(indices.router)
-app.include_router(competitors.router)
-app.include_router(ipo.router)
-app.include_router(news.router)
+app.include_router(auth.router, prefix="/api")
+app.include_router(stock.router, prefix="/api")
+app.include_router(indices.router, prefix="/api")
+app.include_router(competitors.router, prefix="/api")
+app.include_router(ipo.router, prefix="/api")
+app.include_router(news.router, prefix="/api")
+app.include_router(market.router, prefix="/api")
+app.include_router(feature_flags.router, prefix="/api")
+app.include_router(tracked.router, prefix="/api")
 app.include_router(news_endpoints.router, prefix="/api/news/endpoints")
-app.include_router(tracked.router, prefix="/api/tracked")
 app.include_router(rss.router, prefix="/api/rss")
 app.include_router(companies.router, prefix="/api/companies")
 app.include_router(browse.router, prefix="/api/browse")

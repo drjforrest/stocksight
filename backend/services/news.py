@@ -155,12 +155,12 @@ class NewsImpactService:
         return analysis
 
 class NewsService:
-    """Service for fetching financial news articles from NewsAPI."""
+    """Service for fetching financial news articles using Serper.dev Google Search API."""
     
     def __init__(self):
         """Initialize NewsService with API configuration."""
-        self.api_key = settings.newsapi_key
-        self.base_url = "https://newsapi.org/v2/everything"
+        self.api_key = settings.serper_api_key
+        self.base_url = "https://google.serper.dev/news"
         self.cache = CacheService()
 
     def _validate_dates(self, from_date: str, to_date: str) -> tuple[datetime, datetime]:
@@ -214,13 +214,11 @@ class NewsService:
         Returns:
             List[Dict[str, any]]: List of news articles, each containing:
                 - title: Article title
-                - description: Article description or summary
-                - url: URL to full article
-                - urlToImage: URL to article image (if available)
-                - publishedAt: Publication date and time
-                - source: Dictionary containing source name and id
-                - author: Article author (if available)
-                - content: Partial article content
+                - link: URL to full article
+                - snippet: Article snippet/description
+                - source: Source name
+                - date: Publication date
+                - imageUrl: URL to article image (if available)
                 
         Raises:
             HTTPException: On API errors or invalid parameters
@@ -235,34 +233,46 @@ class NewsService:
                 detail="Search query cannot be empty"
             )
 
-        params = {
-            "q": query,
-            "from": from_date,
-            "to": to_date,
-            "language": language,
-            "apiKey": self.api_key,
-            "sortBy": "publishedAt",
-            "pageSize": min(page_size, 100)  # Ensure we don't exceed API limit
+        # Format date range for Google search
+        date_range = f"after:{from_date} before:{to_date}"
+        search_query = f"{query} {date_range}"
+
+        headers = {
+            "X-API-KEY": self.api_key,
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "q": search_query,
+            "gl": "us",  # Set to US results
+            "hl": language,
+            "num": min(page_size, 100)  # Ensure we don't exceed API limit
         }
 
         try:
             async with httpx.AsyncClient() as client:
-                response = await client.get(
+                response = await client.post(
                     self.base_url,
-                    params=params,
+                    headers=headers,
+                    json=payload,
                     timeout=10.0  # 10 second timeout
                 )
                 response.raise_for_status()
                 data = response.json()
                 
-                # Check for API-level errors
-                if data.get("status") == "error":
-                    raise HTTPException(
-                        status_code=500,
-                        detail=data.get("message", "News API error")
-                    )
-                
-                articles = data.get("articles", [])
+                # Transform Serper.dev response to our standard format
+                articles = []
+                for news in data.get("news", []):
+                    article = {
+                        "title": news.get("title"),
+                        "url": news.get("link"),
+                        "description": news.get("snippet"),
+                        "source": news.get("source"),
+                        "publishedAt": news.get("date"),
+                        "imageUrl": news.get("imageUrl"),
+                        "content": news.get("snippet")  # Use snippet as content
+                    }
+                    articles.append(article)
                 
                 # Log article count for monitoring
                 logger.info(
@@ -366,4 +376,294 @@ class NewsService:
 
     async def compare_sentiment(self, symbols: List[str], days: int):
         # Implementation for sentiment comparison
-        pass 
+        pass
+
+    async def fetch_industry_news(
+        self,
+        industry: str,
+        from_date: str,
+        to_date: str,
+        language: str = "en",
+        page_size: int = 100
+    ) -> List[Dict[str, any]]:
+        """Fetch industry-wide news articles.
+        
+        Args:
+            industry: Industry sector (e.g., 'biotech', 'pharmaceutical')
+            from_date: Start date in YYYY-MM-DD format
+            to_date: End date in YYYY-MM-DD format
+            language: Article language (default: "en")
+            page_size: Number of articles to return (default: 100)
+            
+        Returns:
+            List[Dict[str, any]]: Filtered list of relevant industry news
+        """
+        # Create an industry-focused search query
+        search_terms = [
+            f"{industry} industry news",
+            "financial",
+            "market",
+            "-site:pinterest.com",  # Exclude certain sites
+            "-site:facebook.com"
+        ]
+        query = " ".join(search_terms)
+        
+        articles = await self.fetch_news(query, from_date, to_date, language, page_size)
+        
+        # Filter articles for relevance
+        filtered_articles = []
+        relevant_terms = {
+            industry.lower(),
+            "market",
+            "stock",
+            "investor",
+            "financial",
+            "company",
+            "research",
+            "development"
+        }
+        
+        for article in articles:
+            title_lower = article["title"].lower()
+            snippet_lower = article["description"].lower()
+            
+            # Check if article is relevant based on keyword matching
+            if any(term in title_lower or term in snippet_lower for term in relevant_terms):
+                filtered_articles.append(article)
+        
+        return filtered_articles
+
+    async def fetch_company_news(
+        self,
+        company_name: str,
+        ticker_symbol: str,
+        from_date: str,
+        to_date: str,
+        language: str = "en",
+        page_size: int = 100
+    ) -> List[Dict[str, any]]:
+        """Fetch company-specific news articles.
+        
+        Args:
+            company_name: Company name
+            ticker_symbol: Stock ticker symbol
+            from_date: Start date in YYYY-MM-DD format
+            to_date: End date in YYYY-MM-DD format
+            language: Article language (default: "en")
+            page_size: Number of articles to return (default: 100)
+            
+        Returns:
+            List[Dict[str, any]]: Filtered list of relevant company news
+        """
+        # Create a company-focused search query
+        search_terms = [
+            f'"{company_name}"',  # Exact match for company name
+            ticker_symbol,
+            "(stock OR investor OR financial OR earnings OR research)",
+            "-site:pinterest.com",
+            "-site:facebook.com"
+        ]
+        query = " ".join(search_terms)
+        
+        articles = await self.fetch_news(query, from_date, to_date, language, page_size)
+        
+        # Filter articles for relevance
+        filtered_articles = []
+        company_terms = {
+            company_name.lower(),
+            ticker_symbol.lower(),
+            "stock",
+            "investor",
+            "earnings",
+            "research",
+            "clinical",
+            "trial",
+            "fda",
+            "approval",
+            "pipeline"
+        }
+        
+        for article in articles:
+            title_lower = article["title"].lower()
+            snippet_lower = article["description"].lower()
+            
+            # Check if article mentions company and is business/finance related
+            if ((company_name.lower() in title_lower or ticker_symbol.lower() in title_lower) and
+                any(term in title_lower or term in snippet_lower for term in company_terms)):
+                filtered_articles.append(article)
+        
+        return filtered_articles
+
+    @cache_result(prefix="news", expire=3600)  # Cache for 1 hour
+    async def fetch_competitor_news(
+        self,
+        companies: List[Dict[str, str]],  # List of {name, symbol} dicts
+        from_date: str,
+        to_date: str,
+        language: str = "en",
+        page_size: int = 100
+    ) -> Dict[str, List[Dict[str, any]]]:
+        """Fetch news for multiple competing companies.
+        
+        Args:
+            companies: List of company dictionaries with 'name' and 'symbol' keys
+            from_date: Start date in YYYY-MM-DD format
+            to_date: End date in YYYY-MM-DD format
+            language: Article language (default: "en")
+            page_size: Number of articles per company (default: 100)
+            
+        Returns:
+            Dict[str, List[Dict[str, any]]]: Dictionary of company symbols to their news articles
+        """
+        results = {}
+        
+        for company in companies:
+            company_news = await self.fetch_company_news(
+                company["name"],
+                company["symbol"],
+                from_date,
+                to_date,
+                language,
+                page_size
+            )
+            results[company["symbol"]] = company_news
+        
+        return results
+
+    async def fetch_initial_company_news(
+        self,
+        db: Session,
+        company_name: str,
+        ticker_symbol: str,
+        days_back: int = 30  # Get last 30 days of news by default
+    ) -> List[NewsArticle]:
+        """Fetch and store initial news articles when a company is tracked.
+        
+        Args:
+            db: Database session
+            company_name: Company name
+            ticker_symbol: Stock ticker symbol
+            days_back: Number of days of historical news to fetch
+            
+        Returns:
+            List[NewsArticle]: Stored news articles
+        """
+        from_date = (datetime.utcnow() - timedelta(days=days_back)).strftime('%Y-%m-%d')
+        to_date = datetime.utcnow().strftime('%Y-%m-%d')
+
+        # Create focused search query for company
+        search_terms = [
+            f'"{company_name}"',  # Exact match for company name
+            ticker_symbol,
+            "(stock OR investor OR financial OR earnings OR research OR clinical OR trial OR FDA)",
+            "when:30d",  # Last 30 days
+            "-site:pinterest.com",
+            "-site:facebook.com"
+        ]
+        query = " ".join(search_terms)
+
+        try:
+            # Fetch news articles
+            articles = await self.fetch_news(query, from_date, to_date, page_size=50)
+            
+            # Store articles and create company mentions
+            stored_articles = []
+            for article in articles:
+                # Check if article already exists
+                existing_article = db.query(NewsArticle).filter(
+                    NewsArticle.url == article["url"]
+                ).first()
+                
+                if existing_article:
+                    stored_articles.append(existing_article)
+                    continue
+
+                # Create new article
+                news_item = NewsArticle(
+                    title=article["title"],
+                    url=article["url"],
+                    source=article["source"],
+                    published_at=datetime.fromisoformat(article["publishedAt"].replace('Z', '+00:00')),
+                    content=article["content"]
+                )
+                db.add(news_item)
+                
+                # Create company mention
+                mention = NewsCompanyMention(
+                    article=news_item,
+                    company_symbol=ticker_symbol
+                )
+                db.add(mention)
+                
+                stored_articles.append(news_item)
+
+            db.commit()
+            
+            # Calculate sentiment scores for new articles
+            for article in stored_articles:
+                if not article.sentiment_score:  # Only if not already calculated
+                    sentiment = self.analyze_sentiment(article)
+                    if sentiment is not None:
+                        article.sentiment_score = sentiment
+            
+            db.commit()
+            
+            logger.info(
+                f"Stored {len(stored_articles)} initial news articles for {company_name} ({ticker_symbol})"
+            )
+            
+            return stored_articles
+
+        except Exception as e:
+            logger.error(f"Error fetching initial news for {company_name}: {str(e)}")
+            db.rollback()
+            raise
+
+    async def update_tracked_company_news(
+        self,
+        db: Session,
+        company_name: str,
+        ticker_symbol: str
+    ) -> List[NewsArticle]:
+        """Update news articles for a tracked company.
+        
+        Args:
+            db: Database session
+            company_name: Company name
+            ticker_symbol: Stock ticker symbol
+            
+        Returns:
+            List[NewsArticle]: Newly stored news articles
+        """
+        # Get the timestamp of the most recent article
+        latest_article = db.query(NewsArticle)\
+            .join(NewsCompanyMention)\
+            .filter(NewsCompanyMention.company_symbol == ticker_symbol)\
+            .order_by(NewsArticle.published_at.desc())\
+            .first()
+
+        from_date = latest_article.published_at.strftime('%Y-%m-%d') if latest_article else \
+                   (datetime.utcnow() - timedelta(days=7)).strftime('%Y-%m-%d')
+        to_date = datetime.utcnow().strftime('%Y-%m-%d')
+
+        # Only fetch if there might be new articles
+        if from_date != to_date:
+            return await self.fetch_initial_company_news(db, company_name, ticker_symbol, days_back=7)
+        
+        return []
+
+    def analyze_sentiment(self, article: NewsArticle) -> Optional[float]:
+        """Calculate sentiment score for an article.
+        
+        Args:
+            article: NewsArticle object
+            
+        Returns:
+            Optional[float]: Sentiment score between -1 and 1, or None if no content
+        """
+        if not article.content:
+            return None
+            
+        sia = SentimentIntensityAnalyzer()
+        sentiment = sia.polarity_scores(article.content)
+        return sentiment["compound"] 
