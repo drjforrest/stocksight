@@ -35,6 +35,32 @@ export interface MarketMetrics {
   trend: 'up' | 'down' | 'neutral';
 }
 
+export interface Competitor {
+  symbol: string;
+  name: string;
+  therapeutic_area: string;
+  market_cap: number;
+}
+
+export interface PipelineData {
+  stages: {
+    preclinical: number;
+    phase_1: number;
+    phase_2: number;
+    phase_3: number;
+  }[];
+}
+
+export interface MarketShareData {
+  competitors: {
+    name: string;
+    market_share: number;
+  }[];
+}
+
+export type TimeframeType = '1d' | '1w' | '1m' | '3m' | '1y';
+export type IndexType = 'BIOTECH' | 'PHARMA' | 'HEALTHCARE';
+
 // API Functions
 export async function getStockPrice(symbol: string): Promise<StockPrice> {
   try {
@@ -59,12 +85,12 @@ export async function getIPOInsights(params?: {
   }
 }
 
-export async function getMarketTrends(params?: {
-  timeframe?: '1d' | '1w' | '1m' | '3m' | '1y';
-  index?: string;
+export async function getMarketTrends(params: {
+  timeframe: TimeframeType;
+  index: IndexType;
 }): Promise<MarketTrendData[]> {
   try {
-    const response = await api.get('/market-trends', { params });
+    const response = await api.get('/market/trends', { params });
     return response.data;
   } catch (error) {
     console.error("Error fetching market trends:", error);
@@ -72,11 +98,9 @@ export async function getMarketTrends(params?: {
   }
 }
 
-export async function getMarketMetrics(index: string): Promise<MarketMetrics> {
+export async function getMarketMetrics(index: IndexType): Promise<MarketMetrics> {
   try {
-    const response = await api.get('/market-metrics', {
-      params: { index }
-    });
+    const response = await api.get('/market/metrics', { params: { index } });
     return response.data;
   } catch (error) {
     console.error("Error fetching market metrics:", error);
@@ -84,11 +108,68 @@ export async function getMarketMetrics(index: string): Promise<MarketMetrics> {
   }
 }
 
+// Competitor Analysis Functions
+export async function searchCompetitors(query: string): Promise<Competitor[]> {
+  try {
+    const response = await api.get('/competitors', { params: { query } });
+    return response.data;
+  } catch (error) {
+    console.error("Error searching competitors:", error);
+    throw error;
+  }
+}
+
+export async function getPipelineComparison(symbols: string[]): Promise<PipelineData> {
+  try {
+    const response = await api.get('/competitors/analysis/pipeline-comparison', {
+      params: { symbols }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching pipeline comparison:", error);
+    throw error;
+  }
+}
+
+export async function getMarketShare(therapeuticArea?: string): Promise<MarketShareData> {
+  try {
+    const response = await api.get('/competitors/analysis/market-share', {
+      params: { therapeutic_area: therapeuticArea }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching market share data:", error);
+    throw error;
+  }
+}
+
+// Report Generation
+export interface ReportRequest {
+  selected_charts: string[];
+  email?: string | null;
+}
+
+export interface ReportResponse {
+  message: string;
+  report_id?: string;
+  download_url?: string;
+}
+
+export async function generateReport(data: ReportRequest): Promise<ReportResponse> {
+  try {
+    const response = await api.post('/generate-report', data);
+    return response.data;
+  } catch (error) {
+    console.error("Error generating report:", error);
+    throw error;
+  }
+}
+
 // Batch data fetching
-export async function getMarketData(index: string) {
+export async function getMarketData(index: IndexType) {
   try {
     const [trends, metrics] = await Promise.all([
-      getMarketTrends({ index }),
+      getMarketTrends({ index, timeframe: '1m' }),
       getMarketMetrics(index)
     ]);
     return { trends, metrics };
@@ -96,4 +177,5 @@ export async function getMarketData(index: string) {
     console.error("Error fetching market data:", error);
     throw error;
   }
-} 
+}
+

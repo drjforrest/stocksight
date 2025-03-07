@@ -6,11 +6,14 @@ import {
   CategoryScale,
   LinearScale,
   BarElement,
+  RadialLinearScale,
+  PointElement,
+  LineElement,
   Title,
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
+import { Bar, Radar } from 'react-chartjs-2';
 import axios from 'axios';
 import { Card } from './ui/card';
 
@@ -18,6 +21,9 @@ ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
+  RadialLinearScale,
+  PointElement,
+  LineElement,
   Title,
   Tooltip,
   Legend
@@ -37,12 +43,15 @@ interface IPOData {
   };
 }
 
+type ChartType = 'bar' | 'horizontal-bar' | 'radar';
+
 export default function IPOInsights() {
   const [data, setData] = useState<IPOData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<'30d' | '90d' | '180d' | '365d'>('90d');
   const [therapeuticArea, setTherapeuticArea] = useState<string>('all');
+  const [chartType, setChartType] = useState<ChartType>('bar');
 
   useEffect(() => {
     const fetchIPOData = async () => {
@@ -80,112 +89,111 @@ export default function IPOInsights() {
   
   if (!data) return null;
 
-  const chartData = {
-    labels: ['Completion Rate', 'Withdrawal Rate', 'Avg Price Performance'],
-    datasets: [
-      {
-        label: 'IPO Insights',
-        data: [data.completion_rate, data.withdrawal_rate, data.avg_price_performance],
-        backgroundColor: [
-          'rgba(76, 175, 80, 0.8)',
-          'rgba(244, 67, 54, 0.8)',
-          'rgba(255, 193, 7, 0.8)',
-        ],
-        borderColor: [
-          'rgb(76, 175, 80)',
-          'rgb(244, 67, 54)',
-          'rgb(255, 193, 7)',
-        ],
-        borderWidth: 2,
-        borderRadius: 8,
-        hoverBackgroundColor: [
-          'rgba(76, 175, 80, 1)',
-          'rgba(244, 67, 54, 1)',
-          'rgba(255, 193, 7, 1)',
-        ],
-        hoverBorderColor: [
-          'rgb(56, 142, 60)',
-          'rgb(211, 47, 47)',
-          'rgb(245, 124, 0)',
-        ],
-        hoverBorderWidth: 3,
-      },
-    ],
+  const getChartData = () => {
+    const baseData = {
+      labels: ['Completion Rate', 'Withdrawal Rate', 'Avg Price Performance'],
+      datasets: [
+        {
+          label: 'IPO Insights',
+          data: [data.completion_rate, data.withdrawal_rate, data.avg_price_performance],
+          backgroundColor: [
+            'rgba(76, 175, 80, 0.8)',
+            'rgba(244, 67, 54, 0.8)',
+            'rgba(255, 193, 7, 0.8)',
+          ],
+          borderColor: [
+            'rgb(76, 175, 80)',
+            'rgb(244, 67, 54)',
+            'rgb(255, 193, 7)',
+          ],
+          borderWidth: 2,
+          borderRadius: chartType === 'radar' ? 0 : 8,
+        },
+      ],
+    };
+
+    if (chartType === 'horizontal-bar') {
+      return {
+        ...baseData,
+        indexAxis: 'y' as const,
+      };
+    }
+
+    return baseData;
   };
 
-  const chartOptions = {
-    responsive: true,
-    animation: {
-      duration: 2000,
-      easing: 'easeOutQuart' as const,
-    },
-    plugins: {
-      legend: {
-        position: 'top' as const,
-        labels: {
+  const getChartOptions = () => {
+    const baseOptions = {
+      responsive: true,
+      animation: {
+        duration: 2000,
+        easing: 'easeOutQuart' as const,
+      },
+      plugins: {
+        legend: {
+          position: 'top' as const,
+          labels: {
+            padding: 20,
+            font: {
+              size: 12,
+            },
+          },
+        },
+        title: {
+          display: true,
+          text: `IPO Performance Metrics (${timeframe})`,
+          font: {
+            size: 16,
+            weight: 'bold' as const,
+          },
           padding: 20,
-          font: {
-            size: 12,
+        },
+        tooltip: {
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          titleColor: '#000',
+          bodyColor: '#666',
+          bodySpacing: 4,
+          padding: 12,
+          borderColor: '#ddd',
+          borderWidth: 1,
+          callbacks: {
+            label: function(context: any) {
+              const value = context.parsed.y || context.parsed.r;
+              return `${context.label}: ${(value * 100).toFixed(1)}%`;
+            },
           },
         },
       },
-      title: {
-        display: true,
-        text: `IPO Performance Metrics (${timeframe})`,
-        font: {
-          size: 16,
-          weight: 'bold' as const,
-        },
-        padding: 20,
-      },
-      tooltip: {
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        titleColor: '#000',
-        bodyColor: '#666',
-        bodySpacing: 4,
-        padding: 12,
-        borderColor: '#ddd',
-        borderWidth: 1,
-        callbacks: {
-          label: function(context: any) {
-            const value = context.parsed.y;
-            return `${context.label}: ${(value * 100).toFixed(1)}%`;
+      scales: chartType !== 'radar' ? {
+        y: {
+          beginAtZero: true,
+          max: 1,
+          ticks: {
+            callback: function(value: any) {
+              return (value * 100) + '%';
+            },
+            font: {
+              size: 12,
+            },
           },
-          title: function(context: any) {
-            return therapeuticArea !== 'all' 
-              ? `${therapeuticArea.charAt(0).toUpperCase() + therapeuticArea.slice(1)} Sector`
-              : 'All Sectors';
+          grid: {
+            color: 'rgba(0, 0, 0, 0.1)',
           },
         },
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        max: 1,
-        ticks: {
-          callback: function(value: any) {
-            return (value * 100) + '%';
+        x: {
+          grid: {
+            display: false,
           },
-          font: {
-            size: 12,
+          ticks: {
+            font: {
+              size: 12,
+            },
           },
         },
-        grid: {
-          color: 'rgba(0, 0, 0, 0.1)',
-        },
-      },
-      x: {
-        grid: {
-          display: false,
-        },
-        ticks: {
-          font: {
-            size: 12,
-          },
-        },
-      },
-    },
+      } : undefined,
+    };
+
+    return baseOptions;
   };
 
   return (
@@ -193,6 +201,15 @@ export default function IPOInsights() {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold">IPO Insights</h2>
         <div className="flex gap-4">
+          <select
+            value={chartType}
+            onChange={(e) => setChartType(e.target.value as ChartType)}
+            className="px-3 py-2 border rounded-md"
+          >
+            <option value="bar">Bar Chart</option>
+            <option value="horizontal-bar">Horizontal Bar</option>
+            <option value="radar">Radar Chart</option>
+          </select>
           <select
             value={timeframe}
             onChange={(e) => setTimeframe(e.target.value as typeof timeframe)}
@@ -218,7 +235,11 @@ export default function IPOInsights() {
       </div>
 
       <div className="mb-6">
-        <Bar data={chartData} options={chartOptions} />
+        {chartType === 'radar' ? (
+          <Radar data={getChartData()} options={getChartOptions()} />
+        ) : (
+          <Bar data={getChartData()} options={getChartOptions()} />
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4 mt-6">

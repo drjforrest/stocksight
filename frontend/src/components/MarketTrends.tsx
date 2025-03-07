@@ -7,9 +7,11 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
+  Filler,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { Card } from './ui/card';
@@ -21,10 +23,14 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 );
+
+type ChartType = 'line' | 'area' | 'candlestick';
 
 export default function MarketTrends() {
   const [data, setData] = useState<MarketTrendData[]>([]);
@@ -33,6 +39,7 @@ export default function MarketTrends() {
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<'1d' | '1w' | '1m' | '3m' | '1y'>('1m');
   const [index, setIndex] = useState<string>('BIOTECH');
+  const [chartType, setChartType] = useState<ChartType>('line');
 
   useEffect(() => {
     async function fetchData() {
@@ -67,36 +74,60 @@ export default function MarketTrends() {
   
   if (!data.length) return null;
 
-  const chartData = {
-    labels: data.map((item) => new Date(item.date).toLocaleDateString()),
-    datasets: [
-      {
+  const getChartData = () => {
+    const baseDataset = {
+      labels: data.map((item) => new Date(item.date).toLocaleDateString()),
+      datasets: [
+        {
+          label: 'Market Index',
+          data: data.map((item) => item.index_value),
+          borderColor: 'rgb(54, 162, 235)',
+          backgroundColor: 'rgba(54, 162, 235, 0.1)',
+          tension: 0.4,
+          fill: chartType === 'area',
+          pointRadius: chartType === 'line' ? 4 : 0,
+          pointHoverRadius: chartType === 'line' ? 8 : 0,
+          pointBackgroundColor: 'rgb(54, 162, 235)',
+          pointHoverBackgroundColor: 'white',
+          pointBorderColor: 'white',
+          pointHoverBorderColor: 'rgb(54, 162, 235)',
+          pointBorderWidth: 2,
+          pointHoverBorderWidth: 2,
+        },
+        {
+          label: 'Volume',
+          data: data.map((item) => item.volume),
+          borderColor: 'rgb(75, 192, 192)',
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          tension: 0.4,
+          yAxisID: 'volume',
+          fill: true,
+          pointRadius: 0,
+        },
+      ],
+    };
+
+    if (chartType === 'candlestick') {
+      // Modify dataset for candlestick visualization
+      baseDataset.datasets[0] = {
         label: 'Market Index',
         data: data.map((item) => item.index_value),
-        borderColor: 'rgb(54, 162, 235)',
-        backgroundColor: 'rgba(54, 162, 235, 0.1)',
-        tension: 0.4,
-        fill: true,
-        pointRadius: 4,
+        borderColor: 'rgb(75, 192, 192)',
+        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+        tension: 0,
+        fill: false,
+        pointRadius: 6,
         pointHoverRadius: 8,
-        pointBackgroundColor: 'rgb(54, 162, 235)',
+        pointBackgroundColor: 'rgb(75, 192, 192)',
         pointHoverBackgroundColor: 'white',
         pointBorderColor: 'white',
-        pointHoverBorderColor: 'rgb(54, 162, 235)',
+        pointHoverBorderColor: 'rgb(75, 192, 192)',
         pointBorderWidth: 2,
-        pointHoverBorderWidth: 2,
-      },
-      {
-        label: 'Volume',
-        data: data.map((item) => item.volume),
-        borderColor: 'rgb(75, 192, 192)',
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-        tension: 0.4,
-        yAxisID: 'volume',
-        fill: true,
-        pointRadius: 0,
-      },
-    ],
+        pointHoverBorderWidth: 2
+      };
+    }
+
+    return baseDataset;
   };
 
   const chartOptions = {
@@ -203,6 +234,15 @@ export default function MarketTrends() {
         <h2 className="text-xl font-bold">Market Trends</h2>
         <div className="flex gap-4">
           <select
+            value={chartType}
+            onChange={(e) => setChartType(e.target.value as ChartType)}
+            className="px-3 py-2 border rounded-md"
+          >
+            <option value="line">Line Chart</option>
+            <option value="area">Area Chart</option>
+            <option value="candlestick">Candlestick</option>
+          </select>
+          <select
             value={timeframe}
             onChange={(e) => setTimeframe(e.target.value as typeof timeframe)}
             className="px-3 py-2 border rounded-md"
@@ -226,7 +266,7 @@ export default function MarketTrends() {
       </div>
 
       <div className="mb-6">
-        <Line data={chartData} options={chartOptions} />
+        <Line data={getChartData()} options={chartOptions} />
       </div>
 
       {metrics && (
