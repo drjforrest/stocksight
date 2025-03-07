@@ -8,10 +8,12 @@ from dotenv import load_dotenv
 
 # Add the parent directory to Python path
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+backend_dir = os.path.join(project_root, 'backend')
 sys.path.append(project_root)
+sys.path.append(backend_dir)
 
 # Load environment variables from .env file
-dotenv_path = os.path.join(project_root, 'backend', '.env')
+dotenv_path = os.path.join(backend_dir, '.env')
 load_dotenv(dotenv_path)
 
 # this is the Alembic Config object, which provides
@@ -37,7 +39,7 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from config.database import Base
+from backend.config.database import Base
 
 def include_object(object, name, type_, reflected, compare_to):
     """Determine which database objects should be included in the autogeneration."""

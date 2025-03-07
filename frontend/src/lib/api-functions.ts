@@ -1,4 +1,8 @@
+import axios from 'axios';
 import { api } from "./api";
+
+// Base API URL
+const API_BASE = '/api';
 
 // Types
 export interface StockPrice {
@@ -70,51 +74,42 @@ export interface TrackedCompany {
 }
 
 // API Functions
-export async function getStockPrice(symbol: string): Promise<StockPrice> {
-  try {
-    const response = await api.get(`/stocks/${symbol}/price`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching stock price:", error);
-    throw error;
-  }
-}
+export const getStockPrices = async (symbol: string) => {
+  const response = await axios.get(`${API_BASE}/stocks/${symbol}/prices`);
+  return response.data;
+};
 
-export async function getIPOInsights(params?: {
-  timeframe?: '30d' | '90d' | '180d' | '365d';
-  therapeutic_area?: string;
-}): Promise<IPOInsightsData> {
-  try {
-    const response = await api.get('/ipo-insights', { params });
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching IPO insights:", error);
-    throw error;
-  }
-}
+export const getIPOListings = async () => {
+  const response = await axios.get(`${API_BASE}/ipos`);
+  return response.data;
+};
 
-export async function getMarketTrends(params: {
-  timeframe: TimeframeType;
-  index: IndexType;
-}): Promise<MarketTrendData[]> {
-  try {
-    const response = await api.get('/market/trends', { params });
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching market trends:", error);
-    throw error;
-  }
-}
+export const getIPOInsights = async (timeframe: string, therapeuticArea?: string) => {
+  const response = await axios.get(`${API_BASE}/ipos/insights`, {
+    params: {
+      timeframe,
+      therapeutic_area: therapeuticArea
+    }
+  });
+  return response.data;
+};
 
-export async function getMarketMetrics(index: IndexType): Promise<MarketMetrics> {
-  try {
-    const response = await api.get('/market/metrics', { params: { index } });
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching market metrics:", error);
-    throw error;
-  }
-}
+export const getFeatureFlags = async () => {
+  const response = await axios.get(`${API_BASE}/feature-flags`);
+  return response.data;
+};
+
+export const getMarketTrends = async (index: string, timeframe: string) => {
+  const response = await axios.get(`${API_BASE}/market/trends/${index}`, {
+    params: { timeframe }
+  });
+  return response.data;
+};
+
+export const getMarketMetrics = async (index: string) => {
+  const response = await axios.get(`${API_BASE}/market/metrics/${index}`);
+  return response.data;
+};
 
 // Competitor Analysis Functions
 export async function searchCompetitors(query: string): Promise<Competitor[]> {
@@ -177,7 +172,7 @@ export async function generateReport(data: ReportRequest): Promise<ReportRespons
 export async function getMarketData(index: IndexType) {
   try {
     const [trends, metrics] = await Promise.all([
-      getMarketTrends({ index, timeframe: '1m' }),
+      getMarketTrends(index, '1m'),
       getMarketMetrics(index)
     ]);
     return { trends, metrics };
