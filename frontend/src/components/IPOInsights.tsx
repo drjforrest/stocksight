@@ -1,9 +1,27 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import axios from 'axios';
-import { Card } from '@/components/ui/Card';
+import { Card } from './ui/card';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 interface IPOData {
   date: string;
@@ -68,26 +86,104 @@ export default function IPOInsights() {
       {
         label: 'IPO Insights',
         data: [data.completion_rate, data.withdrawal_rate, data.avg_price_performance],
-        backgroundColor: ['#4CAF50', '#F44336', '#FFC107'],
+        backgroundColor: [
+          'rgba(76, 175, 80, 0.8)',
+          'rgba(244, 67, 54, 0.8)',
+          'rgba(255, 193, 7, 0.8)',
+        ],
+        borderColor: [
+          'rgb(76, 175, 80)',
+          'rgb(244, 67, 54)',
+          'rgb(255, 193, 7)',
+        ],
+        borderWidth: 2,
+        borderRadius: 8,
+        hoverBackgroundColor: [
+          'rgba(76, 175, 80, 1)',
+          'rgba(244, 67, 54, 1)',
+          'rgba(255, 193, 7, 1)',
+        ],
+        hoverBorderColor: [
+          'rgb(56, 142, 60)',
+          'rgb(211, 47, 47)',
+          'rgb(245, 124, 0)',
+        ],
+        hoverBorderWidth: 3,
       },
     ],
   };
 
   const chartOptions = {
     responsive: true,
+    animation: {
+      duration: 2000,
+      easing: 'easeOutQuart' as const,
+    },
     plugins: {
       legend: {
         position: 'top' as const,
+        labels: {
+          padding: 20,
+          font: {
+            size: 12,
+          },
+        },
       },
       title: {
         display: true,
         text: `IPO Performance Metrics (${timeframe})`,
+        font: {
+          size: 16,
+          weight: 'bold' as const,
+        },
+        padding: 20,
+      },
+      tooltip: {
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        titleColor: '#000',
+        bodyColor: '#666',
+        bodySpacing: 4,
+        padding: 12,
+        borderColor: '#ddd',
+        borderWidth: 1,
+        callbacks: {
+          label: function(context: any) {
+            const value = context.parsed.y;
+            return `${context.label}: ${(value * 100).toFixed(1)}%`;
+          },
+          title: function(context: any) {
+            return therapeuticArea !== 'all' 
+              ? `${therapeuticArea.charAt(0).toUpperCase() + therapeuticArea.slice(1)} Sector`
+              : 'All Sectors';
+          },
+        },
       },
     },
     scales: {
       y: {
         beginAtZero: true,
         max: 1,
+        ticks: {
+          callback: function(value: any) {
+            return (value * 100) + '%';
+          },
+          font: {
+            size: 12,
+          },
+        },
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+        },
+      },
+      x: {
+        grid: {
+          display: false,
+        },
+        ticks: {
+          font: {
+            size: 12,
+          },
+        },
       },
     },
   };

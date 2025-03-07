@@ -1,45 +1,46 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import axios from 'axios';
-import { Card } from './ui/Card';
+import { Card } from './ui/card';
+import { getMarketData } from '@/lib/api-functions';
+import type { MarketTrendData, MarketMetrics } from '@/lib/api-functions';
 
-interface MarketTrendData {
-  date: string;
-  index_value: number;
-  volume: number;
-  change_percent: number;
-}
-
-interface IndexMetrics {
-  volatility: number;
-  moving_average: number;
-  trend: 'up' | 'down' | 'neutral';
-}
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 export default function MarketTrends() {
   const [data, setData] = useState<MarketTrendData[]>([]);
-  const [metrics, setMetrics] = useState<IndexMetrics | null>(null);
+  const [metrics, setMetrics] = useState<MarketMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<'1d' | '1w' | '1m' | '3m' | '1y'>('1m');
   const [index, setIndex] = useState<string>('BIOTECH');
 
   useEffect(() => {
-    const fetchMarketData = async () => {
+    async function fetchData() {
       try {
-        const [trendResponse, metricsResponse] = await Promise.all([
-          axios.get('/api/market-trends', {
-            params: { timeframe, index }
-          }),
-          axios.get('/api/market-metrics', {
-            params: { index }
-          })
-        ]);
-        
-        setData(trendResponse.data);
-        setMetrics(metricsResponse.data);
+        setLoading(true);
+        const { trends, metrics } = await getMarketData(index);
+        setData(trends);
+        setMetrics(metrics);
         setError(null);
       } catch (err) {
         setError('Failed to fetch market trend data');
@@ -47,9 +48,9 @@ export default function MarketTrends() {
       } finally {
         setLoading(false);
       }
-    };
+    }
 
-    fetchMarketData();
+    fetchData();
   }, [timeframe, index]);
 
   if (loading) return (
@@ -73,41 +74,104 @@ export default function MarketTrends() {
         label: 'Market Index',
         data: data.map((item) => item.index_value),
         borderColor: 'rgb(54, 162, 235)',
-        tension: 0.1,
-        fill: false,
+        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+        tension: 0.4,
+        fill: true,
+        pointRadius: 4,
+        pointHoverRadius: 8,
+        pointBackgroundColor: 'rgb(54, 162, 235)',
+        pointHoverBackgroundColor: 'white',
+        pointBorderColor: 'white',
+        pointHoverBorderColor: 'rgb(54, 162, 235)',
+        pointBorderWidth: 2,
+        pointHoverBorderWidth: 2,
       },
       {
         label: 'Volume',
         data: data.map((item) => item.volume),
         borderColor: 'rgb(75, 192, 192)',
         backgroundColor: 'rgba(75, 192, 192, 0.2)',
-        tension: 0.1,
+        tension: 0.4,
         yAxisID: 'volume',
         fill: true,
+        pointRadius: 0,
       },
     ],
   };
 
   const chartOptions = {
     responsive: true,
+    animation: {
+      duration: 2000,
+      easing: 'easeOutQuart' as const,
+    },
     interaction: {
       mode: 'index' as const,
       intersect: false,
+      axis: 'x' as const,
     },
     plugins: {
       legend: {
         position: 'top' as const,
+        labels: {
+          usePointStyle: true,
+          pointStyle: 'circle',
+          padding: 20,
+        },
       },
       title: {
         display: true,
         text: `${index} Index Performance`,
+        font: {
+          size: 16,
+          weight: 'bold' as const,
+        },
+        padding: 20,
+      },
+      tooltip: {
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        titleColor: '#000',
+        bodyColor: '#666',
+        bodySpacing: 4,
+        padding: 12,
+        borderColor: '#ddd',
+        borderWidth: 1,
+        usePointStyle: true,
+        callbacks: {
+          label: function(context: any) {
+            const label = context.dataset.label || '';
+            const value = context.parsed.y;
+            if (context.datasetIndex === 0) {
+              return `${label}: ${value.toFixed(2)}`;
+            } else {
+              return `${label}: ${value.toLocaleString()}`;
+            }
+          },
+        },
       },
     },
     scales: {
+      x: {
+        grid: {
+          display: false,
+        },
+        ticks: {
+          maxRotation: 45,
+          minRotation: 45,
+        },
+      },
       y: {
         type: 'linear' as const,
         display: true,
         position: 'left' as const,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+        },
+        ticks: {
+          callback: function(value: any) {
+            return value.toFixed(2);
+          },
+        },
       },
       volume: {
         type: 'linear' as const,
@@ -115,6 +179,11 @@ export default function MarketTrends() {
         position: 'right' as const,
         grid: {
           drawOnChartArea: false,
+        },
+        ticks: {
+          callback: function(value: any) {
+            return value.toLocaleString();
+          },
         },
       },
     },
