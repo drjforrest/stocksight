@@ -1,0 +1,89 @@
+Tree diagram for: /Users/drjforrest/Development/DevProjects/WebDev/stocksight/
+Generated on: 2025-03-06 15:36:35
+
+├── README.md
+├── backend
+│   ├── README.md
+│   ├── __init__.py
+│   ├── __pycache__ [...]
+│   ├── api
+│   │   ├── __init__.py
+│   │   ├── __pycache__ [...]
+│   │   ├── routes
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__ [...]
+│   │   │   ├── indices.py
+│   │   │   ├── market_data.py
+│   │   │   └── stock.py
+│   │   └── schemas
+│   │       ├── __pycache__ [...]
+│   │       ├── market_data.py
+│   │       └── stock.py
+│   ├── config
+│   │   ├── __init__.py
+│   │   ├── __pycache__ [...]
+│   │   ├── database.py
+│   │   └── settings.py
+│   ├── main.py
+│   ├── models
+│   │   ├── __init__.py
+│   │   ├── __pycache__ [...]
+│   │   ├── base.py
+│   │   └── stock.py
+│   ├── pyproject.toml
+│   ├── requirements.txt
+│   ├── services
+│   │   ├── __init__.py
+│   │   ├── __pycache__ [...]
+│   │   ├── market_data.py
+│   │   ├── marketstack.py
+│   │   └── stock.py
+│   ├── stocksight_backend.egg-info
+│   │   ├── PKG-INFO
+│   │   ├── SOURCES.txt
+│   │   ├── dependency_links.txt
+│   │   ├── requires.txt
+│   │   └── top_level.txt
+│   └── venv [...]
+├── database
+│   ├── README
+│   ├── alembic.ini
+│   ├── env.py
+│   └── migrations
+│       ├── __pycache__ [...]
+│       ├── env.py
+│       ├── script.py.mako
+│       └── versions
+│           ├── __pycache__ [...]
+│           └── fe394cb06589_initial_migration.py
+├── directory_tree.txt
+├── frontend
+│   ├── README.md
+│   ├── eslint.config.mjs
+│   ├── next-env.d.ts
+│   ├── next.config.mjs
+│   ├── node_modules [...]
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── postcss.config.js
+│   ├── postcss.config.mjs
+│   ├── public
+│   │   ├── file.svg
+│   │   ├── globe.svg
+│   │   ├── next.svg
+│   │   ├── vercel.svg
+│   │   └── window.svg
+│   ├── src
+│   │   ├── app
+│   │   │   ├── favicon.ico
+│   │   │   ├── globals.css
+│   │   │   ├── layout.tsx
+│   │   │   └── page.tsx
+│   │   └── components
+│   │       ├── StockChart.tsx
+│   │       └── StockPrice.tsx
+│   ├── tailwind.config.js
+│   └── tsconfig.json
+├── pyproject.toml
+├── requirements.txt
+└── setup.py

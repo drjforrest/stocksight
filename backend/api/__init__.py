@@ -1,3 +1,3 @@
 """
-API package for StockSight
+StockSight API package
 """ 

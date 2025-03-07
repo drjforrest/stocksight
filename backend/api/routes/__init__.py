@@ -1,3 +1,3 @@
 """
-Routes package for StockSight API
+StockSight API routes package
 """ 
