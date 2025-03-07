@@ -6,6 +6,9 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+FEATURE_FLAGS = {
+    'COMPETITOR_SCORING': os.getenv('NEXT_PUBLIC_COMPETITOR_SCORING', 'false') == "true",
+}
 
 # Database connection settings
 DB_USER = os.getenv('DB_USER', 'stocksight_user')
@@ -33,3 +36,4 @@ def get_db() -> Session:
         yield db
     finally:
         db.close() 
+

@@ -1,35 +1,31 @@
 'use client';
 
-import React from 'react';
-import StockPrice from '@/components/StockPrice';
-import StockChart from '@/components/StockChart';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import Dashboard from '../components/Dashboard';
+import AdminPanel from '../components/AdminPanel';
 
-export default function Home() {
-  const [watchlist] = React.useState(['AAPL', 'GOOGL', 'MSFT', 'AMZN']);
+export default function Page() {
+  const [featureFlags, setFeatureFlags] = useState({ competitor_score: false });
+
+  useEffect(() => {
+    // Fetch feature flags (e.g., competitor score toggle)
+    axios.get('/api/feature-flags').then((res) => {
+      setFeatureFlags(res.data);
+    });
+  }, []);
 
   return (
-    <main className="min-h-screen p-8 bg-gray-100">
-      <h1 className="text-4xl font-bold mb-8">StockSight Dashboard</h1>
-      
-      {/* Stock Price Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {watchlist.map(symbol => (
-          <StockPrice key={symbol} symbol={symbol} />
-        ))}
-      </div>
+    <main className="p-6">
+      {/* Dashboard with Tabs */}
+      <Dashboard />
 
-      {/* Stock Charts */}
-      <div className="space-y-8">
-        {watchlist.map(symbol => (
-          <div key={symbol} className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-bold mb-4">{symbol} Price History</h2>
-            <StockChart
-              symbol={symbol}
-              data={[]} // This will be populated with real data
-            />
-          </div>
-        ))}
-      </div>
+      {/* Admin Panel - Only show if competitor scoring is enabled */}
+      {featureFlags.competitor_score && (
+        <div className="mt-6">
+          <AdminPanel />
+        </div>
+      )}
     </main>
   );
 }

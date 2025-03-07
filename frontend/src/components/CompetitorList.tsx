@@ -2,17 +2,18 @@
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { Competitor, FeatureFlags } from "../types/competitor";
 
 export default function CompetitorList() {
-  const [competitors, setCompetitors] = useState<any[]>([]);
+  const [competitors, setCompetitors] = useState<Competitor[]>([]);
   const [featureEnabled, setFeatureEnabled] = useState(false);
 
   useEffect(() => {
-    axios.get("/api/feature-flags").then((res) => {
+    axios.get<FeatureFlags>("/api/feature-flags").then((res) => {
       setFeatureEnabled(res.data.competitor_score);
     });
 
-    axios.get("/api/competitors").then((res) => {
+    axios.get<Competitor[]>("/api/competitors").then((res) => {
       setCompetitors(res.data);
     });
   }, []);
