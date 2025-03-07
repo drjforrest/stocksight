@@ -5,10 +5,12 @@ from fastapi import HTTPException
 
 from backend.models.ipo import IPOListing, IPOFinancials, IPOUpdate, IPOStatus
 from backend.api.schemas.ipo import IPOListingCreate, IPOFinancialsCreate, IPOUpdateCreate
+from backend.services.analysis import MarketAnalysis
 
 class IPOService:
     def __init__(self, db: Session):
         self.db = db
+        self.analysis = MarketAnalysis(db)
 
     async def list_ipos(self, status: Optional[IPOStatus], therapeutic_area: Optional[str], days_range: int):
         query = self.db.query(IPOListing)
@@ -55,10 +57,26 @@ class IPOService:
         self.db.refresh(db_update)
         return db_update
 
-    async def analyze_success_rate(self, timeframe_days: int, therapeutic_area: Optional[str]):
-        # Implementation for success rate analysis
-        pass
+    async def analyze_success_rate(
+        self,
+        timeframe_days: int,
+        therapeutic_area: Optional[str] = None
+    ):
+        """Analyze IPO success rates and performance metrics"""
+        return await self.analysis.analyze_ipo_success_rate(timeframe_days, therapeutic_area)
 
-    async def analyze_pricing_trends(self, therapeutic_area: Optional[str]):
-        # Implementation for pricing trends analysis
-        pass 
+    async def analyze_pricing_trends(
+        self,
+        therapeutic_area: Optional[str] = None
+    ):
+        """Analyze IPO pricing trends and valuation metrics"""
+        return await self.analysis.analyze_pricing_trends(therapeutic_area)
+
+    async def analyze_market_impact(
+        self,
+        symbol: str,
+        days_before: int = 30,
+        days_after: int = 30
+    ):
+        """Analyze the market impact of an IPO on competitors"""
+        return await self.analysis.analyze_market_impact(symbol, days_before, days_after) 

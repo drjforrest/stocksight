@@ -67,4 +67,4 @@ export default function StockChart({ symbol, data }: StockChartProps) {
       <Line data={chartData} options={options} />
     </div>
   );
-} 
+}

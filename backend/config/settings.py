@@ -16,6 +16,15 @@ class Settings(BaseSettings):
     database_url: str
     db: Optional[Session] = None
     
+    # Redis Settings
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_db: int = 0
+    redis_password: Optional[str] = None
+    
+    # Cache Settings
+    cache_ttl: int = 3600  # Default cache TTL in seconds
+    
     # Application Settings
     tracked_stocks: List[str] = []  # List of stock symbols to track
     update_interval: int = 300  # 5 minutes in seconds

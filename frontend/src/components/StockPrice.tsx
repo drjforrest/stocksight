@@ -53,4 +53,4 @@ export default function StockPrice({ symbol }: StockPriceProps) {
       </div>
     </div>
   );
-} 
+}

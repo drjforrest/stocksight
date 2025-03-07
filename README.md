@@ -1,234 +1,137 @@
 # StockSight
 
-A FastAPI-based API for biotech stock market data and analysis.
+A sophisticated FastAPI-based platform for biotech stock market analysis and IPO insights.
 
-## Installation
+## 🧬 Overview
+
+StockSight is a specialized platform designed for biotech investors and analysts, providing comprehensive market data analysis, competitor tracking, and IPO insights. Our platform combines real-time market data with advanced analytics to deliver actionable insights for the biotech sector.
+
+## ⚡ Key Features
+
+### Market Analysis
+- Real-time biotech stock price tracking
+- Advanced technical analysis with ML-powered predictions
+- Historical price analysis with customizable timeframes
+- Market sentiment analysis with news integration
+
+### IPO Insights
+- Comprehensive IPO tracking and analysis
+- Success rate predictions based on historical data
+- Pricing trends analysis
+- Post-IPO performance tracking
+
+### Competitor Analysis
+- Detailed competitor profiling
+- Patent portfolio tracking
+- Pipeline development monitoring
+- Market share analysis
+- Financial metrics comparison
+
+### News & Sentiment
+- Real-time news aggregation
+- Sentiment analysis for biotech news
+- Impact analysis on stock performance
+- Topic trend analysis
+
+## 🚀 Getting Started
+
+### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/yourusername/stocksight.git
+cd stocksight
+
+# Install dependencies
 pip install -e .
 ```
 
-## Running the Application
+### Configuration
+
+1. Set up your environment variables:
+```bash
+cp .env.example .env
+# Edit .env with your MarketStack API key and database credentials
+```
+
+2. Initialize the database:
+```bash
+alembic upgrade head
+```
+
+### Running the Application
 
 ```bash
 uvicorn backend.main:app --reload
 ```
 
-## API Documentation
+## 📚 API Documentation
 
-Once running, visit:
-- http://localhost:8000/docs for Swagger UI
-- http://localhost:8000/redoc for ReDoc
+Once running, access the interactive API documentation:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
 
-## Features
+## 🔧 Technical Stack
 
-- Real-time stock price data
-- Historical price analysis
-- Company information
-- Dividend history
-- Stock splits
-- Market indices tracking
-- Exchange information
+- **Backend**: FastAPI, Python 3.12+
+- **Database**: PostgreSQL with SQLAlchemy
+- **Cache**: Redis for performance optimization
+- **APIs**: MarketStack integration
+- **Analysis**: 
+  - pandas for data manipulation
+  - scikit-learn for ML predictions
+  - statsmodels for time series analysis
 
-# StockSight Project Setup Documentation
+## 📊 Example Usage
 
-## Project Overview
-
-StockSight is an IPO insights application designed to provide real-time stock tracking, IPO performance analysis, and market sentiment insights. The project is structured with a Python FastAPI backend, a React TypeScript frontend (Next.js), and a PostgreSQL database for data storage and analysis.
-
----
-
-## 1. Initial Project Structure Setup
-
-### Directory Structure Created:
-
-```
-stocksight/
-├── backend/              # FastAPI backend
-│   ├── app/
-│   ├── models/
-│   ├── services/
-│   ├── config/
-│   ├── venv/             # Python virtual environment
-│   ├── main.py           # FastAPI entry point
-├── frontend/             # Next.js frontend
-├── database/             # PostgreSQL migrations
-│   ├── migrations/
-│   │   ├── script.py.mako
-│   │   ├── versions/
-│   ├── alembic.ini       # Alembic migration config
-│   ├── env.py            # Environment variables for database
-│   ├── README
-```
-
----
-
-## 2. Backend Setup
-
-### **1. FastAPI Installation & Environment Setup**
-
-```bash
-mkdir -p backend/{app,models,services,config}
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install fastapi uvicorn psycopg2 requests python-dotenv
-```
-
-### **2. FastAPI Entry Point (main.py)**
-
+### Fetch Stock Analysis
 ```python
-from fastapi import FastAPI
+import requests
 
-app = FastAPI()
+# Get stock prediction
+response = requests.get(
+    "http://localhost:8000/stocks/MRNA/predict",
+    params={"days_ahead": 30}
+)
+prediction = response.json()
 
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to StockSight API"}
+# Get competitor analysis
+response = requests.get(
+    "http://localhost:8000/competitors/analysis/market-share",
+    params={"therapeutic_area": "mRNA vaccines"}
+)
+market_share = response.json()
 ```
 
-### **3. Running the FastAPI Server**
-
-```bash
-uvicorn main:app --reload
-```
-
-Expected output:
-
-```
-INFO:     Uvicorn running on http://127.0.0.1:8000
-INFO:     Application startup complete.
-```
-
-To test:
-
-```bash
-curl http://127.0.0.1:8000/
-```
-
-Expected response:
-
-```json
-{"message": "Welcome to StockSight API"}
-```
-
----
-
-## 3. PostgreSQL Setup
-
-### **1. Create Database & User**
-
-```bash
-createdb stocksight
-psql stocksight
-```
-
-Inside PostgreSQL prompt:
-
-```sql
-CREATE USER stocksight_user WITH PASSWORD 'stocksight_user1484';
-GRANT ALL PRIVILEGES ON DATABASE stocksight TO stocksight_user;
-```
-
-### **2. Create Stock Prices Table**
-
-```sql
-CREATE TABLE stock_prices (
-    id SERIAL PRIMARY KEY,
-    symbol VARCHAR(10) NOT NULL,
-    price DECIMAL(10, 2) NOT NULL,
-    timestamp TIMESTAMP DEFAULT NOW()
-);
-GRANT ALL PRIVILEGES ON TABLE stock_prices TO stocksight_user;
-```
-
-### **3. Database Connection in FastAPI**
-
+### Track IPO Performance
 ```python
-import psycopg2
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-
-def get_db_connection():
-    return psycopg2.connect(
-        dbname=DB_NAME,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        host=DB_HOST,
-        port=DB_PORT
-    )
+# Get upcoming IPOs in biotech
+response = requests.get(
+    "http://localhost:8000/ipos/upcoming",
+    params={"therapeutic_area": "gene therapy"}
+)
+upcoming_ipos = response.json()
 ```
 
-To test database connection:
+## 🔄 Recent Updates
 
-```python
-@app.get("/db-test")
-def test_db():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT COUNT(*) FROM stock_prices;")
-    count = cur.fetchone()[0]
-    cur.close()
-    conn.close()
-    return {"message": f"Database is connected. {count} records in stock_prices table."}
-```
+- Added ML-powered stock movement predictions
+- Implemented competitor analysis features
+- Enhanced IPO tracking capabilities
+- Integrated news sentiment analysis
+- Added Redis caching for improved performance
 
-Test with:
+## 📈 Performance
 
-```bash
-curl http://127.0.0.1:8000/db-test
-```
+- Real-time data updates every 5 minutes
+- Sub-second response times for most endpoints
+- Cached responses for expensive computations
+- Scalable architecture for high concurrency
 
----
+## 🛠 Contributing
 
-## 4. Alembic Migrations Fix
+We welcome contributions! Please check our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
-### **Issue:**
+## 📝 License
 
-Alembic migrations were incorrectly nested under `migrations/migrations/`.
-
-### **Fix:**
-
-```bash
-mv migrations/migrations/* migrations/
-mv migrations/migrations/.* migrations/ 2>/dev/null
-rm -r migrations/migrations
-```
-
-### **Final Folder Structure After Fix:**
-
-```
-.
-├── alembic.ini
-├── README
-├── env.py
-└── migrations/
-    ├── script.py.mako
-    ├── versions/
-```
-
-Alembic is now correctly set up. You can run:
-
-```bash
-alembic upgrade head
-```
-
-To apply migrations.
-
----
-
-## 5. Next Steps
-
-1. **Integrate MarketStack API** to fetch real-time stock data.
-2. **Develop Next.js frontend** with TypeScript & Tailwind CSS.
-3. **Build API endpoints** for stock tracking & analysis.
-
-StockSight is now ready for further development! 🚀
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

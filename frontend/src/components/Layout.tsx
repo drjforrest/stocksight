@@ -1,12 +1,17 @@
 import './globals.css';
+import type { Metadata } from 'next';
 import { Inter } from "next/font/google";
-import Layout from '@/components/Layout';
-import { metadata } from '@/lib/metadata'; // Import metadata separately
+import Layout from '@/components/Layout'; // Import the new layout
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
 });
+
+export const metadata: Metadata = {
+  title: 'StockSight',
+  description: 'Real-time stock tracking and IPO insights',
+};
 
 export default function RootLayout({
   children,
@@ -16,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
-        <Layout>{children}</Layout>
+        <Layout>{children}</Layout> {/* Wrap everything inside the main layout */}
       </body>
     </html>
   );
