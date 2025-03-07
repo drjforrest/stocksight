@@ -2,8 +2,8 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from fastapi import HTTPException
 
-from backend.models.competitor import Competitor, CompetitorFinancials, CompetitorPatent
-from backend.api.schemas.competitor import CompetitorCreate, CompetitorFinancialsCreate, CompetitorPatentCreate
+from models.competitor import Competitor, CompetitorFinancials, CompetitorPatent
+from api.schemas.competitor import CompetitorCreate, CompetitorFinancialsCreate, CompetitorPatentCreate
 
 class CompetitorService:
     def __init__(self, db: Session):

@@ -4,10 +4,10 @@ from datetime import datetime, timedelta
 import logging
 from typing import List
 
-from backend.services.marketstack_client import MarketStackClient
-from backend.config.settings import get_settings
-from backend.models.stock import StockPrice, CompanyInfo
-from backend.models.competitor import Competitor
+from services.marketstack_client import MarketStackClient
+from config.settings import get_settings
+from models.stock import StockPrice, CompanyInfo
+from models.competitor import Competitor
 from backend.models.ipo import IPOListing, IPOStatus
 
 logger = logging.getLogger(__name__)

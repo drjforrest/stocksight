@@ -1,15 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import datetime, timedelta
 
-from backend.api.schemas.news import (
+from api.schemas.news import (
     NewsArticleCreate, NewsArticleResponse,
     NewsCompanyMentionCreate, NewsCompanyMentionResponse,
     NewsImpactAnalysisCreate, NewsImpactAnalysisResponse
 )
-from backend.services.news import NewsService
-from backend.config.database import get_db
+from services.news import NewsService
+from config.database import get_db
 
 router = APIRouter(
     prefix="/news",

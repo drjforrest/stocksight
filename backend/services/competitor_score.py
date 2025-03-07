@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from backend.models.competitor import Competitor
+from models.competitor import Competitor    
 import numpy as np
 
 class CompetitorService:

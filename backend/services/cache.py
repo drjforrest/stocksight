@@ -6,7 +6,7 @@ from functools import wraps
 import hashlib
 import logging
 
-from backend.config.settings import get_settings
+from config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 settings = get_settings()

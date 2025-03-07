@@ -9,10 +9,10 @@ from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 
-from backend.models.ipo import IPOListing, IPOStatus, IPOFinancials
-from backend.models.stock import StockPrice
-from backend.models.competitor import Competitor, CompetitorFinancials
-from backend.services.cache import cache_result
+from models.ipo import IPOListing, IPOStatus, IPOFinancials
+from models.stock import StockPrice
+from models.competitor import Competitor, CompetitorFinancials
+from services.cache import cache_result
 
 class MarketAnalysis:
     def __init__(self, db: Session):

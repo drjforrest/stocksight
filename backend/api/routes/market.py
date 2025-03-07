@@ -2,8 +2,8 @@ from fastapi import APIRouter, Query
 from typing import List, Optional
 from datetime import datetime, timedelta
 import numpy as np
-from ...models.market import MarketTrend, MarketMetric
-from ...services.market_data import MarketDataService
+from services.market_data import MarketDataService
+from models.market import MarketTrend, MarketMetric
 
 router = APIRouter(prefix="/market", tags=["Market Data"])
 market_service = MarketDataService()

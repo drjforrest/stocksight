@@ -1,16 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta        
 
-from backend.api.schemas.ipo import (
+from api.schemas.ipo import (
     IPOListingCreate, IPOListingResponse,
     IPOFinancialsCreate, IPOFinancialsResponse,
     IPOUpdateCreate, IPOUpdateResponse
 )
-from backend.services.ipo import IPOService
-from backend.config.database import get_db
-from backend.models.ipo import IPOStatus
+from services.ipo import IPOService
+from config.database import get_db
+from models.ipo import IPOStatus
 
 router = APIRouter(
     prefix="/ipos",

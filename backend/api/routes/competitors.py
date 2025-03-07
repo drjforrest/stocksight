@@ -3,13 +3,13 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, timedelta
 
-from backend.api.schemas.competitor import (
+from api.schemas.competitor import (
     CompetitorCreate, CompetitorResponse,
     CompetitorFinancialsCreate, CompetitorFinancialsResponse,
     CompetitorPatentCreate, CompetitorPatentResponse
 )
-from backend.services.competitor import CompetitorService
-from backend.config.database import get_db
+from services.competitor import CompetitorService
+from config.database import get_db
 
 router = APIRouter(
     prefix="/competitors",

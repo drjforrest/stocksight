@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Ind
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
-from .base import Base
+from models.base import Base  
 
 class NewsArticle(Base):
     """Model for storing biotech news articles with sentiment analysis."""

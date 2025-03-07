@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
-from backend.services.pdf_generator import generate_pdf_report
-from backend.services.email_service import send_report
+from services.pdf_generator import generate_pdf_report
+from services.email_service import send_report
 
 router = APIRouter()
 

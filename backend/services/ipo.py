@@ -3,9 +3,9 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 from fastapi import HTTPException
 
-from backend.models.ipo import IPOListing, IPOFinancials, IPOUpdate, IPOStatus
-from backend.api.schemas.ipo import IPOListingCreate, IPOFinancialsCreate, IPOUpdateCreate
-from backend.services.analysis import MarketAnalysis
+from models.ipo import IPOListing, IPOFinancials, IPOUpdate, IPOStatus
+from api.schemas.ipo import IPOListingCreate, IPOFinancialsCreate, IPOUpdateCreate
+from services.analysis import MarketAnalysis
 
 class IPOService:
     def __init__(self, db: Session):

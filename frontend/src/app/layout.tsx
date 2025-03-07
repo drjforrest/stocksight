@@ -1,7 +1,6 @@
 import './globals.css';
 import { Inter } from "next/font/google";
 import Layout from '@/components/Layout';
-import { metadata } from '@/lib/metadata'; // Import metadata separately
 
 const inter = Inter({
   subsets: ["latin"],
@@ -16,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
-        <Layout>{children}</Layout>
+        {children} {/* No <Layout> here! Page.tsx handles it */}
       </body>
     </html>
   );

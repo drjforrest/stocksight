@@ -2,8 +2,8 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from backend.models.news import NewsArticle, NewsCompanyMention, NewsImpactAnalysis
-from backend.api.schemas.news import NewsArticleCreate, NewsCompanyMentionCreate, NewsImpactAnalysisCreate
+from models.news import NewsArticle, NewsCompanyMention, NewsImpactAnalysis
+from api.schemas.news import NewsArticleCreate, NewsCompanyMentionCreate, NewsImpactAnalysisCreate
 
 class NewsService:
     def __init__(self, db: Session):

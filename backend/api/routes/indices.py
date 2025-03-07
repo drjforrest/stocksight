@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Query
 from datetime import datetime, timedelta
 from typing import Optional
 
-from ...services.market_data import MarketDataService
+from services.market_data import MarketDataService   
 
 router = APIRouter(
     prefix="/indices",

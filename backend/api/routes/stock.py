@@ -3,17 +3,17 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, timedelta
 
-from backend.api.schemas.stock import (
+from api.schemas.stock import (
     StockPriceCreate, StockPriceResponse,
     CompanyInfoCreate, CompanyInfoResponse,
     DividendCreate, DividendResponse,
     StockSplitCreate, StockSplitResponse,
     ExchangeCreate, ExchangeResponse
 )
-from backend.services.stock import StockService
-from backend.config.database import get_db
-from backend.services.market_data import MarketDataService
-from backend.models.stock import StockPrice, CompanyInfo
+from services.stock import StockService
+from config.database import get_db
+from services.market_data import MarketDataService
+from models.stock import StockPrice, CompanyInfo
 
 router = APIRouter(
     prefix="/stocks",

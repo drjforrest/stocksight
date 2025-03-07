@@ -3,7 +3,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 import enum
 
-from .base import Base
+from models.base import Base  
 
 class IPOStatus(enum.Enum):
     """Enumeration for IPO status."""

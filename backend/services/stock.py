@@ -3,13 +3,13 @@ from sqlalchemy import and_, or_
 from datetime import datetime
 from typing import List, Optional
 
-from backend.models.stock import StockPrice, CompanyInfo, DividendHistory, StockSplit, Exchange
-from backend.api.schemas.stock import (
+from models.stock import StockPrice, CompanyInfo, DividendHistory, StockSplit, Exchange
+from api.schemas.stock import (
     StockPriceCreate, CompanyInfoCreate, DividendCreate,
     StockSplitCreate, ExchangeCreate, EODData, IntradayData,
     SymbolSearchResult
 )
-from backend.services.market_data import MarketDataService
+from services.market_data import MarketDataService
 
 class StockService:
     def __init__(self, db: Session):

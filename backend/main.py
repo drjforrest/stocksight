@@ -7,7 +7,7 @@ from pathlib import Path
 if __name__ == "__main__":
     sys.path.append(str(Path(__file__).parent.parent))
 
-from backend.api.routes import stock, indices, competitors, ipo, news
+from api.routes import stock, indices, competitors, ipo, news
 
 app = FastAPI(
     title="StockSight API",

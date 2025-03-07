@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
-from backend.models.ipo import IPOStatus
+from models.ipo import IPOStatus
 
 class IPOListingBase(BaseModel):
     company_name: str

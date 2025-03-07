@@ -17,6 +17,7 @@ import { Line } from 'react-chartjs-2';
 import { Card } from './ui/card';
 import { getMarketData } from '@/lib/api-functions';
 import type { MarketTrendData, MarketMetrics } from '@/lib/api-functions';
+import { IndexType } from '@/types/market';
 
 ChartJS.register(
   CategoryScale,
@@ -38,7 +39,7 @@ export default function MarketTrends() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<'1d' | '1w' | '1m' | '3m' | '1y'>('1m');
-  const [index, setIndex] = useState<string>('BIOTECH');
+  const [index, setIndex] = useState<IndexType>('BIOTECH');
   const [chartType, setChartType] = useState<ChartType>('line');
 
   useEffect(() => {
@@ -255,7 +256,7 @@ export default function MarketTrends() {
           </select>
           <select
             value={index}
-            onChange={(e) => setIndex(e.target.value)}
+            onChange={(e) => setIndex(e.target.value as IndexType)}
             className="px-3 py-2 border rounded-md"
           >
             <option value="BIOTECH">Biotech Index</option>
