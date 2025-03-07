@@ -1,33 +1,31 @@
 import os
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from typing import List, Optional
+from sqlalchemy.orm import Session
 
 # Get the absolute path to the backend directory
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 class Settings(BaseSettings):
     # API Settings
-    MARKETSTACK_API_KEY: str
-    MARKETSTACK_BASE_URL: str = "http://api.marketstack.com/v1"
+    marketstack_api_key: str
+    api_rate_limit: int = 5  # requests per second
     
     # Database Settings
-    DB_NAME: str
-    DB_USER: str
-    DB_PASSWORD: str
-    DB_HOST: str
-    DB_PORT: int
-    DB_SCHEMA: str = "stocksight"  # Default schema name
+    database_url: str
+    db: Optional[Session] = None
     
-    @property
-    def DATABASE_URL(self) -> str:
-        return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}?options=-csearch_path%3D{self.DB_SCHEMA}"
+    # Application Settings
+    tracked_stocks: List[str] = []  # List of stock symbols to track
+    update_interval: int = 300  # 5 minutes in seconds
     
-    # API Rate Limiting
-    API_RATE_LIMIT: int = 100  # requests per minute
+    # IPO Settings
+    ipo_check_interval: int = 86400  # 24 hours in seconds
     
     class Config:
         env_file = os.path.join(BACKEND_DIR, ".env")
 
 @lru_cache()
-def get_settings():
+def get_settings() -> Settings:
     return Settings() 
