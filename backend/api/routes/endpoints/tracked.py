@@ -2,16 +2,16 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-from backend.config.database import get_db
-from backend.models.tracked_company import TrackedCompany, TrackedCompanyCreate
-from backend.services.news import NewsFetcher
+from config.database import get_db
+from models.tracked_company import TrackedCompany, TrackedCompanyCreate
+from services.news import NewsFetcher
 
 router = APIRouter(
     prefix="/tracked",
     tags=["tracked"]
 )
 
-@router.post("/{user_id}/{symbol}")
+@router.post("/{user_id}/{symbol}", response_model=TrackedCompany)
 async def add_tracked_company(
     user_id: int,
     symbol: str,
@@ -24,6 +24,12 @@ async def add_tracked_company(
         user_id: ID of the user
         symbol: Company stock symbol
         db: Database session
+        
+    Returns:
+        TrackedCompany: The newly created tracked company entry
+        
+    Raises:
+        HTTPException: If company is already being tracked
     """
     # Check if already tracking
     existing = db.query(TrackedCompany).filter(
@@ -37,8 +43,9 @@ async def add_tracked_company(
             detail=f"Already tracking {symbol}"
         )
     
-    # Add to tracked companies
-    tracked = TrackedCompany(user_id=user_id, company_symbol=symbol)
+    # Create tracked company using schema
+    tracked_data = TrackedCompanyCreate(user_id=user_id, company_symbol=symbol)
+    tracked = TrackedCompany(**tracked_data.model_dump())
     db.add(tracked)
     
     # Fetch initial news
@@ -55,7 +62,8 @@ async def add_tracked_company(
         print(f"Error fetching initial news for {symbol}: {e}")
     
     db.commit()
-    return {"message": f"{symbol} added to tracked list"}
+    db.refresh(tracked)
+    return tracked
 
 @router.delete("/{user_id}/{symbol}")
 async def remove_tracked_company(

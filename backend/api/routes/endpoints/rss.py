@@ -34,15 +34,15 @@ async def generate_feed_token(
     """
     # Check if token exists in cache
     token_key = f"rss_token:{user_id}"
-    token = await cache.get(token_key)
+    token = await cache.aget(token_key)
     
     if not token:
         # Generate new token if not exists
         token = secrets.token_urlsafe(32)
-        await cache.set(token_key, token)
+        await cache.aset(token_key, token)
         
         # Also store reverse mapping for validation
-        await cache.set(f"rss_user:{token}", str(user_id))
+        await cache.aset(f"rss_user:{token}", str(user_id))
     
     feed_url = f"/rss/feed/{token}"
     return {
@@ -65,7 +65,7 @@ async def get_rss_feed(
         db: Database session
     """
     # Validate token and get user_id
-    user_id = await cache.get(f"rss_user:{token}")
+    user_id = await cache.aget(f"rss_user:{token}")
     if not user_id:
         raise HTTPException(
             status_code=404,
@@ -74,7 +74,7 @@ async def get_rss_feed(
     
     # Check cache for recent feed
     cache_key = f"rss_feed:{token}:{days}"
-    cached_feed = await cache.get(cache_key)
+    cached_feed = await cache.aget(cache_key)
     if cached_feed:
         return Response(
             content=cached_feed,
@@ -149,7 +149,7 @@ async def get_rss_feed(
     rss_feed = tostring(rss, encoding="utf-8", method="xml")
     
     # Cache the feed for 1 hour
-    await cache.set(cache_key, rss_feed, expire=3600)
+    await cache.aset(cache_key, rss_feed, expire=3600)
     
     return Response(
         content=rss_feed,

@@ -1,12 +1,17 @@
 from typing import List, Dict, Optional
 import httpx
 from datetime import datetime
-from .cache import RedisCache, cache_result, SEARCH_RESULTS_EXPIRY
+from .cache import CacheService, cache_result, SEARCH_RESULTS_EXPIRY
 import asyncio
+from sqlalchemy.orm import Session
+from sqlalchemy import or_
+from models.company import CompanyInfo
+from api.schemas.company import CompanyBrowseResponse
 
 class CompanyBrowseService:
-    def __init__(self):
-        self.cache = RedisCache()
+    def __init__(self, db: Session):
+        self.db = db
+        self.cache = CacheService()
         self.fda_url = "https://api.fda.gov/drug/drugsfda.json"
         self.sec_url = "https://data.sec.gov/api/xbrl/companyfacts"
 

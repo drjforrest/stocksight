@@ -61,6 +61,14 @@ export interface MarketShareData {
 export type TimeframeType = '1d' | '1w' | '1m' | '3m' | '1y';
 export type IndexType = 'BIOTECH' | 'PHARMA' | 'HEALTHCARE';
 
+// Tracked Companies Types
+export interface TrackedCompany {
+  id: number;
+  user_id: number;
+  company_symbol: string;
+  added_at: string;
+}
+
 // API Functions
 export async function getStockPrice(symbol: string): Promise<StockPrice> {
   try {
@@ -175,6 +183,36 @@ export async function getMarketData(index: IndexType) {
     return { trends, metrics };
   } catch (error) {
     console.error("Error fetching market data:", error);
+    throw error;
+  }
+}
+
+// Tracked Companies Functions
+export async function getTrackedCompanies(userId: number): Promise<string[]> {
+  try {
+    const response = await api.get(`/tracked/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching tracked companies:", error);
+    throw error;
+  }
+}
+
+export async function addTrackedCompany(userId: number, symbol: string): Promise<TrackedCompany> {
+  try {
+    const response = await api.post(`/tracked/${userId}/${symbol}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error adding tracked company:", error);
+    throw error;
+  }
+}
+
+export async function removeTrackedCompany(userId: number, symbol: string): Promise<void> {
+  try {
+    await api.delete(`/tracked/${userId}/${symbol}`);
+  } catch (error) {
+    console.error("Error removing tracked company:", error);
     throw error;
   }
 }

@@ -13,11 +13,12 @@ All methods are asynchronous and return structured data from the MarketStack API
 import os
 from datetime import datetime
 from typing import Dict, List, Optional, Union, Any
-import requests
 from dotenv import load_dotenv
 from .marketstack import MarketStackClient
+from config.settings import get_settings
 
 load_dotenv()
+settings = get_settings()
 
 class MarketDataService:
     """Service for handling market data operations through the MarketStack API.
@@ -32,28 +33,7 @@ class MarketDataService:
 
     def __init__(self):
         """Initialize the MarketDataService with a MarketStack client."""
-        self.client = MarketStackClient()
-
-    def _make_request(self, endpoint: str, params: Dict = None) -> Union[Dict, List, None]:
-        """Make a request to the MarketStack API with error handling.
-        
-        Args:
-            endpoint (str): API endpoint to call
-            params (Dict, optional): Query parameters for the request
-            
-        Returns:
-            Union[Dict, List, None]: API response data or None if request fails
-            
-        Raises:
-            requests.exceptions.RequestException: If the API request fails
-        """
-        try:
-            response = self.session.get(f"{self.base_url}/{endpoint}", params=params)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            print(f"Error making request to {endpoint}: {str(e)}")
-            return None
+        self.client = MarketStackClient(api_key=settings.marketstack_api_key)
 
     async def get_intraday_data(
         self,

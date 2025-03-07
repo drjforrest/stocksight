@@ -84,77 +84,35 @@ Once running, access the interactive API documentation:
 
 ## 💾 Caching System
 
-### Redis Configuration
+The application uses Redis for caching frequently accessed data. The caching system provides both synchronous and asynchronous interfaces:
 
-StockSight uses Redis for high-performance caching with both synchronous and asynchronous clients. Configure Redis through environment variables:
+1. **Cache Service** (`CacheService`):
+   - Provides both sync and async methods for caching operations
+   - Configurable expiration times
+   - Automatic serialization/deserialization
+   - Function result caching decorator
 
-```bash
-REDIS_HOST=localhost      # Redis server host
-REDIS_PORT=6379          # Redis server port
-REDIS_DB=0              # Redis database number
-REDIS_PASSWORD=         # Optional Redis password
-```
-
-### Cache Implementation
-
-The caching system provides two implementations:
-
-1. **Synchronous Cache** (`RedisCache`):
-   - General-purpose caching for API responses and computed data
-   - Automatic JSON serialization/deserialization
-   - Configurable TTL (Time-To-Live) for cache entries
-   - Built-in error handling and logging
+Example usage:
 
 ```python
-from services.cache import RedisCache, cache_result
+from services.cache import CacheService, cache_result
 
-# Direct cache usage
-cache = RedisCache()
-cache.set("my_key", {"data": "value"}, expire=3600)
-data = cache.get("my_key")
+# Initialize cache
+cache = CacheService()
 
-# Decorator usage
-@cache_result(prefix="market", expire=300)
-async def get_market_data():
-    # ... fetch market data ...
+# Using sync methods
+cache.set("key", "value", expire=3600)  # Cache for 1 hour
+value = cache.get("key")
+
+# Using async methods
+await cache.aset("key", "value", expire=3600)
+value = await cache.aget("key")
+
+# Using the decorator
+@cache_result(prefix="my_data", expire=3600)
+async def get_data():
+    return await fetch_expensive_data()
 ```
-
-2. **Asynchronous Cache** (MarketStack Client):
-   - Specialized for MarketStack API responses
-   - Rate limiting and automatic retries
-   - Async/await support
-   - Request deduplication
-
-### Cache Keys and Expiration
-
-Predefined cache prefixes and TTLs for different data types:
-
-- Market Data: 5 minutes TTL
-- SEC Data: 24 hours TTL
-- FDA Data: 24 hours TTL
-- Search Results: 1 hour TTL
-
-### Best Practices
-
-1. **Key Generation**:
-   - Use the `_generate_key()` method for consistent key creation
-   - Include relevant parameters in cache keys
-   - Avoid overly long or complex keys
-
-2. **Error Handling**:
-   - Cache failures are logged but don't break the application
-   - Fallback to direct API calls when cache is unavailable
-   - Automatic retry mechanism for failed cache operations
-
-3. **Performance Optimization**:
-   - Use appropriate TTLs based on data volatility
-   - Implement batch operations where possible
-   - Monitor cache hit/miss ratios
-
-4. **Memory Management**:
-   - Set reasonable expiration times
-   - Use compression for large values
-   - Implement cache eviction policies
 
 ## 🧬 Biotech Features
 
@@ -213,6 +171,148 @@ Interactive charts and analytics:
    - Area concentration analysis
    - Market opportunity mapping
    - Competitor positioning
+
+## 📊 Analysis & Algorithms
+
+### Company Analysis Pipeline
+
+1. **Market Data Collection**:
+   - SEC data integration for market cap and financial metrics
+   - FDA data integration for drug approvals and clinical trials
+   - Real-time stock price tracking
+   - Patent portfolio analysis
+
+2. **Therapeutic Area Classification**:
+   ```python
+   @cache_result("browse:therapeutic", SEARCH_RESULTS_EXPIRY)
+   async def get_therapeutic_areas():
+       # Fetches and categorizes therapeutic areas from FDA data
+       # Uses product classifications and trial categories
+       # Returns sorted, deduplicated list of areas
+   ```
+
+3. **Company Filtering & Scoring**:
+   - Market Cap Analysis:
+     - Filters companies by market capitalization range
+     - Converts raw values to billions for standardization
+     - Supports min/max range filtering
+   
+   - Clinical Pipeline Evaluation:
+     ```python
+     # Example filtering criteria
+     {
+         "therapeutic_areas": ["Oncology", "Immunology"],
+         "clinical_trials": {
+             "phase1": [...],
+             "phase2": [...],
+             "phase3": [...],
+             "phase4": [...]
+         }
+     }
+     ```
+
+### Competitor Analysis Algorithm
+
+1. **Data Collection Layer**:
+   - SEC Integration:
+     - Company tickers and CIK numbers
+     - Market capitalization data
+     - Financial statements
+   - FDA Integration:
+     - Drug approvals
+     - Clinical trial statuses
+     - Therapeutic area classifications
+
+2. **Filtering & Matching**:
+   ```python
+   # Pseudo-code for competitor matching
+   def match_competitors(company):
+       return {
+           "direct_competitors": # Same therapeutic areas & market cap range
+           "pipeline_competitors": # Similar clinical trial phases
+           "market_competitors": # Similar market cap & business model
+       }
+   ```
+
+3. **Scoring Metrics**:
+   - Market Position Score:
+     - Market cap relative to peer group
+     - Revenue growth trajectory
+     - Market share in therapeutic areas
+   
+   - Pipeline Strength Score:
+     - Number of trials by phase
+     - Historical trial success rates
+     - Diversity of therapeutic areas
+   
+   - Innovation Score:
+     - Patent portfolio strength
+     - R&D investment ratio
+     - Novel therapeutic approaches
+
+4. **Real-time Updates**:
+   - Continuous monitoring of:
+     - Stock price movements
+     - Clinical trial updates
+     - Patent filings
+     - FDA approvals
+   - Automatic score recalculation
+   - Trend analysis and alerts
+
+### Data Integration Architecture
+
+```
+[SEC API] → Market Data → Competitor Service
+    ↓
+[FDA API] → Clinical Data  →     ↓
+    ↓                    Analysis Engine
+[Patent DB] → IP Data   →     ↓
+    ↓                    Scoring System
+[News API] → Sentiment →      ↓
+                        Results Cache
+```
+
+### Performance Optimizations
+
+1. **Caching Strategy**:
+   - Therapeutic area cache: 1 hour expiry
+   - Company data cache: 24 hour expiry
+   - Market cap cache: 1 hour expiry
+   - Search results cache: Configurable expiry
+
+2. **Query Optimization**:
+   - Batched SEC data requests
+   - Parallel FDA data fetching
+   - Incremental updates
+   - Connection pooling
+
+3. **Response Time Targets**:
+   - Browse endpoint: < 200ms
+   - Company detail: < 100ms
+   - Competitor analysis: < 500ms
+   - Market data: Real-time
+
+### Example API Usage
+
+```python
+# Get competitors in therapeutic area
+response = await browse_service.browse_companies(
+    therapeutic_area="Oncology",
+    market_cap_min=1.0,  # $1B minimum
+    market_cap_max=10.0, # $10B maximum
+    has_approved_drugs=True,
+    phase="3"  # Phase 3 trials
+)
+
+# Analyze competitor positioning
+competitors = response["results"]
+for competitor in competitors:
+    print(f"Company: {competitor['name']}")
+    print(f"Market Cap: ${competitor['market_cap']}B")
+    print(f"Therapeutic Areas: {competitor['therapeutic_areas']}")
+    print(f"Approved Drugs: {len(competitor['approved_drugs'])}")
+    print(f"Clinical Trials: {competitor['clinical_trials']}")
+```
 
 ## 📊 Example Usage
 

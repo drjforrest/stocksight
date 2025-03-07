@@ -1,29 +1,34 @@
 import os
+import sys
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool, text
 from alembic import context
 from dotenv import load_dotenv
 
-# Add the parent directory to Python path so we can import our models
-import sys
-# Get absolute path to the project root
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
-sys.path.insert(0, project_root)  # Insert at beginning of path to take precedence
+# Add the parent directory to Python path
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+sys.path.append(project_root)
 
-# Load environment variables from backend/.env
-load_dotenv(os.path.join(project_root, 'backend', '.env'))
+# Load environment variables from backend/.env file
+dotenv_path = os.path.join(project_root, 'backend', '.env')
+load_dotenv(dotenv_path)
 
 # this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
+# access to the values within the .env file in use.
 config = context.config
 
 # Set the database URL in the alembic.ini file
 DATABASE_URL = os.getenv('DATABASE_URL')
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable is not set")
+if not isinstance(DATABASE_URL, str):
+    raise TypeError("DATABASE_URL must be a string")
+
 SCHEMA = "stocksight"
 
 # Override sqlalchemy.url in alembic.ini
-config.set_main_option('sqlalchemy.url', DATABASE_URL)
+config.set_main_option('sqlalchemy.url', str(DATABASE_URL))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -32,7 +37,7 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from backend.models.stock import Base
+from backend.config.database import Base
 
 def include_object(object, name, type_, reflected, compare_to):
     """Determine which database objects should be included in the autogeneration."""
