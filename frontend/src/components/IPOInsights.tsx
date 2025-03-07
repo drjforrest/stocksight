@@ -61,7 +61,7 @@ export default function IPOInsights({ data, fullView = false }: IPOInsightsProps
   useEffect(() => {
     const fetchIPOData = async () => {
       try {
-        const response = await axios.get('/api/ipo-insights', {
+        const response = await axios.get('/api/ipos/insights', {
           params: {
             timeframe,
             therapeutic_area: therapeuticArea !== 'all' ? therapeuticArea : undefined

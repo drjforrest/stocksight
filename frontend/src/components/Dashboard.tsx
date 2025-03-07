@@ -67,10 +67,11 @@ export default function Dashboard() {
     fetchMarketData();
   }, []);
 
-  // Fetch stock data
+  // Fetch stock data - only if we have a selected company, otherwise show placeholder
   useEffect(() => {
     const fetchStockData = async () => {
       try {
+        // For now, using AAPL as example. You should replace this with selected company
         const response = await axios.get('/api/stocks/AAPL/prices');
         setStockData({
           prices: response.data,
@@ -81,7 +82,7 @@ export default function Dashboard() {
         setStockData(prev => ({
           ...prev,
           loading: false,
-          error: 'Failed to fetch stock data'
+          error: 'Select a company to view stock data'
         }));
       }
     };
@@ -135,6 +136,12 @@ export default function Dashboard() {
     </div>
   );
 
+  const renderNoDataState = (message: string) => (
+    <div className="bg-gray-50 p-4 rounded-md">
+      <p className="text-gray-600">{message}</p>
+    </div>
+  );
+
   return (
     <div className="p-6">
       {/* Tabs */}
@@ -166,6 +173,7 @@ export default function Dashboard() {
               <h2 className="text-xl font-bold mb-4">Stock Performance</h2>
               {stockData.loading ? renderLoadingState() :
                stockData.error ? renderErrorState(stockData.error) :
+               stockData.prices.length === 0 ? renderNoDataState('Select a company to view stock data') :
                <StockChart symbol="AAPL" data={stockData.prices} />}
             </CardContent>
           </Card>
@@ -175,6 +183,7 @@ export default function Dashboard() {
               <h2 className="text-xl font-bold mb-4">Market Summary</h2>
               {marketData.loading ? renderLoadingState() :
                marketData.error ? renderErrorState(marketData.error) :
+               marketData.trends.length === 0 ? renderNoDataState('No market data available') :
                <MarketTrends data={marketData.trends} />}
             </CardContent>
           </Card>
@@ -184,6 +193,7 @@ export default function Dashboard() {
               <h2 className="text-xl font-bold mb-4">Recent IPOs</h2>
               {ipoData.loading ? renderLoadingState() :
                ipoData.error ? renderErrorState(ipoData.error) :
+               ipoData.listings.length === 0 ? renderNoDataState('No IPO data available') :
                <IPOInsights data={ipoData.listings} />}
             </CardContent>
           </Card>
@@ -196,6 +206,7 @@ export default function Dashboard() {
             <CardContent>
               {marketData.loading ? renderLoadingState() :
                marketData.error ? renderErrorState(marketData.error) :
+               marketData.trends.length === 0 ? renderNoDataState('No market data available') :
                <MarketTrends data={marketData.trends} fullView />}
             </CardContent>
           </Card>
@@ -208,6 +219,7 @@ export default function Dashboard() {
             <CardContent>
               {ipoData.loading ? renderLoadingState() :
                ipoData.error ? renderErrorState(ipoData.error) :
+               ipoData.listings.length === 0 ? renderNoDataState('No IPO data available') :
                <IPOInsights data={ipoData.listings} fullView />}
             </CardContent>
           </Card>

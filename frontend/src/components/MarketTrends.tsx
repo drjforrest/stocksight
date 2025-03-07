@@ -15,9 +15,8 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { Card } from './ui/card';
-import { getMarketData } from '@/lib/api-functions';
-import type { MarketTrendData, MarketMetrics } from '@/lib/api-functions';
-import { IndexType } from '@/types/market';
+import axios from 'axios';
+import type { IndexType } from '@/types/market';
 
 ChartJS.register(
   CategoryScale,
@@ -31,12 +30,29 @@ ChartJS.register(
   Filler
 );
 
+interface MarketTrendData {
+  date: string;
+  index_value: number;
+  volume: number;
+}
+
+interface MarketMetrics {
+  volatility: number;
+  moving_average: number;
+  trend: 'up' | 'down' | 'neutral';
+}
+
 type ChartType = 'line' | 'area' | 'candlestick';
 
-export default function MarketTrends() {
-  const [data, setData] = useState<MarketTrendData[]>([]);
+interface MarketTrendsProps {
+  data?: any[];
+  fullView?: boolean;
+}
+
+export default function MarketTrends({ data: initialData, fullView = false }: MarketTrendsProps) {
+  const [data, setData] = useState<MarketTrendData[]>(initialData || []);
   const [metrics, setMetrics] = useState<MarketMetrics | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<'1d' | '1w' | '1m' | '3m' | '1y'>('1m');
   const [index, setIndex] = useState<IndexType>('BIOTECH');
@@ -46,9 +62,15 @@ export default function MarketTrends() {
     async function fetchData() {
       try {
         setLoading(true);
-        const { trends, metrics } = await getMarketData(index);
-        setData(trends);
-        setMetrics(metrics);
+        const [trendsResponse, metricsResponse] = await Promise.all([
+          axios.get(`/api/market/trends/${index}`, {
+            params: { timeframe }
+          }),
+          axios.get(`/api/market/metrics/${index}`)
+        ]);
+        
+        setData(trendsResponse.data);
+        setMetrics(metricsResponse.data);
         setError(null);
       } catch (err) {
         setError('Failed to fetch market trend data');
@@ -58,8 +80,10 @@ export default function MarketTrends() {
       }
     }
 
-    fetchData();
-  }, [timeframe, index]);
+    if (!initialData) {
+      fetchData();
+    }
+  }, [timeframe, index, initialData]);
 
   if (loading) return (
     <Card className="animate-pulse">
