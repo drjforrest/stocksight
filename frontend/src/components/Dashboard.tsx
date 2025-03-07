@@ -1,8 +1,8 @@
 import React from "react";
-import { StockChart } from "@/components/StockChart";
-import { MarketTrends } from "@/components/MarketTrends";
-import { IPOInsights } from "@/components/IPOInsights";
-import { Card, CardContent } from "@/components/ui/card";
+import StockChart from "./StockChart";
+import MarketTrends from "./MarketTrends";
+import IPOInsights from "./IPOInsights";
+import { Card, CardContent } from "./ui/Card";
 
 export default function Dashboard() {
   return (
@@ -11,7 +11,7 @@ export default function Dashboard() {
       <Card>
         <CardContent>
           <h2 className="text-xl font-bold mb-4">Stock Performance</h2>
-          <StockChart />
+          <StockChart symbol="AAPL" data={[]} />
         </CardContent>
       </Card>
       

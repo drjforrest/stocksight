@@ -1,7 +1,9 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from "next/font/google";
-import Layout from '@/components/Layout'; // Import the new layout
+import React from 'react';
+import { Navbar } from './Navbar';
+import { Sidebar } from './Sidebar';
 
 const inter = Inter({
   subsets: ["latin"],
@@ -13,16 +15,20 @@ export const metadata: Metadata = {
   description: 'Real-time stock tracking and IPO insights',
 };
 
-export default function RootLayout({
-  children,
-}: {
+interface LayoutProps {
   children: React.ReactNode;
-}) {
+}
+
+export default function Layout({ children }: LayoutProps) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} antialiased`}>
-        <Layout>{children}</Layout> {/* Wrap everything inside the main layout */}
-      </body>
-    </html>
+    <div className="flex h-screen">
+      <Sidebar />
+      <div className="flex-1 flex flex-col">
+        <Navbar />
+        <main className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
+          {children}
+        </main>
+      </div>
+    </div>
   );
 }
