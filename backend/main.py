@@ -8,6 +8,7 @@ if __name__ == "__main__":
     sys.path.append(str(Path(__file__).parent.parent))
 
 from api.routes import stock, indices, competitors, ipo, news
+from api.routes.endpoints import tracked, rss, companies, browse, news_endpoints
 
 app = FastAPI(
     title="StockSight API",
@@ -23,6 +24,10 @@ app = FastAPI(
     - News sentiment analysis
     - Market indices monitoring
     - Exchange information
+    - Company tracking and personalized news feeds
+    - RSS feed generation for tracked companies
+    - FDA drug application tracking
+    - SEC filing analysis
     
     All endpoints are documented with examples and detailed parameter descriptions.
     Rate limits and data freshness are handled automatically.
@@ -50,6 +55,22 @@ app = FastAPI(
         {
             "name": "news",
             "description": "News aggregation and sentiment analysis for biotech companies"
+        },
+        {
+            "name": "tracked",
+            "description": "Manage tracked companies and personalized news feeds"
+        },
+        {
+            "name": "rss",
+            "description": "Generate RSS feeds for tracked companies"
+        },
+        {
+            "name": "companies",
+            "description": "Comprehensive company data including market, SEC, and FDA information"
+        },
+        {
+            "name": "browse",
+            "description": "Browse companies and their information"
         }
     ]
 )
@@ -69,6 +90,11 @@ app.include_router(indices.router)
 app.include_router(competitors.router)
 app.include_router(ipo.router)
 app.include_router(news.router)
+app.include_router(news_endpoints.router, prefix="/api/news/endpoints")
+app.include_router(tracked.router, prefix="/api/tracked")
+app.include_router(rss.router, prefix="/api/rss")
+app.include_router(companies.router, prefix="/api/companies")
+app.include_router(browse.router, prefix="/api/browse")
 
 @app.get("/")
 async def root():

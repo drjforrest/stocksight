@@ -5,6 +5,7 @@ import redis
 from functools import wraps
 import hashlib
 import logging
+import os
 
 from config.settings import get_settings
 
@@ -14,9 +15,9 @@ settings = get_settings()
 class RedisCache:
     def __init__(self):
         self.redis = redis.Redis(
-            host=settings.redis_host,
-            port=settings.redis_port,
-            db=settings.redis_db,
+            host=os.getenv("REDIS_HOST", "localhost"),
+            port=int(os.getenv("REDIS_PORT", 6379)),
+            db=0,
             decode_responses=True
         )
 
@@ -81,3 +82,15 @@ def cache_result(prefix: str, expire: int = 3600):
             return result
         return wrapper
     return decorator 
+
+# Cache key prefixes
+MARKET_DATA_PREFIX = "market:"
+SEC_DATA_PREFIX = "sec:"
+FDA_DATA_PREFIX = "fda:"
+SEARCH_RESULTS_PREFIX = "search:"
+
+# Cache expiration times (in seconds)
+MARKET_DATA_EXPIRY = 300  # 5 minutes
+SEC_DATA_EXPIRY = 86400  # 24 hours
+FDA_DATA_EXPIRY = 86400  # 24 hours
+SEARCH_RESULTS_EXPIRY = 3600  # 1 hour 

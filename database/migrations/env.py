@@ -19,16 +19,11 @@ load_dotenv(os.path.join(project_root, 'backend', '.env'))
 config = context.config
 
 # Set the database URL in the alembic.ini file
-DB_USER = os.getenv('DB_USER')
-DB_PASSWORD = os.getenv('DB_PASSWORD')
-DB_HOST = os.getenv('DB_HOST')
-DB_PORT = os.getenv('DB_PORT')
-DB_NAME = os.getenv('DB_NAME')
+DATABASE_URL = os.getenv('DATABASE_URL')
 SCHEMA = "stocksight"
 
 # Override sqlalchemy.url in alembic.ini
-config.set_main_option('sqlalchemy.url', 
-    f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
+config.set_main_option('sqlalchemy.url', DATABASE_URL)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
