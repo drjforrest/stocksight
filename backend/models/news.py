@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 from pydantic import BaseModel
 from datetime import datetime
 from typing import List, Optional
-from backend.config.database import Base
+from config.database import Base
 
 # SQLAlchemy Models
 class NewsArticle(Base):

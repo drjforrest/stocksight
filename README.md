@@ -82,6 +82,138 @@ Once running, access the interactive API documentation:
   - scikit-learn for ML predictions
   - statsmodels for time series analysis
 
+## 💾 Caching System
+
+### Redis Configuration
+
+StockSight uses Redis for high-performance caching with both synchronous and asynchronous clients. Configure Redis through environment variables:
+
+```bash
+REDIS_HOST=localhost      # Redis server host
+REDIS_PORT=6379          # Redis server port
+REDIS_DB=0              # Redis database number
+REDIS_PASSWORD=         # Optional Redis password
+```
+
+### Cache Implementation
+
+The caching system provides two implementations:
+
+1. **Synchronous Cache** (`RedisCache`):
+   - General-purpose caching for API responses and computed data
+   - Automatic JSON serialization/deserialization
+   - Configurable TTL (Time-To-Live) for cache entries
+   - Built-in error handling and logging
+
+```python
+from services.cache import RedisCache, cache_result
+
+# Direct cache usage
+cache = RedisCache()
+cache.set("my_key", {"data": "value"}, expire=3600)
+data = cache.get("my_key")
+
+# Decorator usage
+@cache_result(prefix="market", expire=300)
+async def get_market_data():
+    # ... fetch market data ...
+```
+
+2. **Asynchronous Cache** (MarketStack Client):
+   - Specialized for MarketStack API responses
+   - Rate limiting and automatic retries
+   - Async/await support
+   - Request deduplication
+
+### Cache Keys and Expiration
+
+Predefined cache prefixes and TTLs for different data types:
+
+- Market Data: 5 minutes TTL
+- SEC Data: 24 hours TTL
+- FDA Data: 24 hours TTL
+- Search Results: 1 hour TTL
+
+### Best Practices
+
+1. **Key Generation**:
+   - Use the `_generate_key()` method for consistent key creation
+   - Include relevant parameters in cache keys
+   - Avoid overly long or complex keys
+
+2. **Error Handling**:
+   - Cache failures are logged but don't break the application
+   - Fallback to direct API calls when cache is unavailable
+   - Automatic retry mechanism for failed cache operations
+
+3. **Performance Optimization**:
+   - Use appropriate TTLs based on data volatility
+   - Implement batch operations where possible
+   - Monitor cache hit/miss ratios
+
+4. **Memory Management**:
+   - Set reasonable expiration times
+   - Use compression for large values
+   - Implement cache eviction policies
+
+## 🧬 Biotech Features
+
+### Data Model
+
+The platform includes specialized tables for biotech industry analysis:
+
+1. **Therapeutic Areas**:
+   - Categorization of drug development focus
+   - Hierarchical organization of disease areas
+   - Relationship mapping between companies and therapeutic areas
+
+2. **Clinical Trials**:
+   - Comprehensive trial tracking across phases
+   - Integration with company profiles
+   - Status monitoring and updates
+   - Therapeutic area associations
+
+3. **IPO Updates**:
+   - Real-time tracking of IPO status changes
+   - Historical valuation data
+   - Market response metrics
+   - Competitor impact analysis
+
+### Competitor Analysis
+
+Enhanced competitor tracking with:
+
+1. **Scoring Metrics**:
+   - Market volatility assessment
+   - IPO performance tracking
+   - Patent portfolio strength
+   - Pipeline development score
+
+2. **Market Position**:
+   - Relative market cap analysis
+   - Therapeutic area market share
+   - Clinical trial success rates
+   - Patent position strength
+
+### Visualization Features
+
+Interactive charts and analytics:
+
+1. **Market Cap Distribution**:
+   - Sector-wide distribution analysis
+   - Peer group comparisons
+   - Historical trends
+
+2. **Clinical Pipeline**:
+   - Phase distribution charts
+   - Success rate visualization
+   - Timeline projections
+
+3. **Therapeutic Focus**:
+   - Area concentration analysis
+   - Market opportunity mapping
+   - Competitor positioning
+
 ## 📊 Example Usage
 
 ### Fetch Stock Analysis
@@ -115,11 +247,14 @@ upcoming_ipos = response.json()
 
 ## 🔄 Recent Updates
 
-- Added ML-powered stock movement predictions
-- Implemented competitor analysis features
-- Enhanced IPO tracking capabilities
-- Integrated news sentiment analysis
-- Added Redis caching for improved performance
+- Enhanced biotech schema with therapeutic areas and clinical trials tracking
+- Improved competitor analysis with advanced scoring metrics
+- Added interactive visualizations for market analysis
+- Upgraded Redis caching system with async support
+- Implemented comprehensive error handling and logging
+- Added detailed documentation and usage examples
+- Optimized database queries and cache performance
+- Enhanced IPO tracking with real-time updates
 
 ## 📈 Performance
 

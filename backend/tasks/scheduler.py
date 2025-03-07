@@ -1,19 +1,21 @@
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from datetime import datetime, timedelta
 import logging
 from typing import List
+from sqlalchemy.orm import Session
 
 from services.marketstack_client import MarketStackClient
 from config.settings import get_settings
 from models.stock import StockPrice, CompanyInfo
 from models.competitor import Competitor
-from backend.models.ipo import IPOListing, IPOStatus
+from models.ipo import IPOListing, IPOStatus
+from config.database import SessionLocal
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-scheduler = AsyncIOScheduler()
+scheduler = BackgroundScheduler()
 
 async def update_stock_prices():
     """Update real-time stock prices every 5 minutes"""

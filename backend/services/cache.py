@@ -15,9 +15,10 @@ settings = get_settings()
 class RedisCache:
     def __init__(self):
         self.redis = redis.Redis(
-            host=os.getenv("REDIS_HOST", "localhost"),
-            port=int(os.getenv("REDIS_PORT", 6379)),
-            db=0,
+            host=settings.redis_host,
+            port=settings.redis_port,
+            db=settings.redis_db,
+            password=settings.redis_password,
             decode_responses=True
         )
 

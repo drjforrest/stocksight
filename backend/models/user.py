@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from backend.config.database import Base
+from config.database import Base
 
 class User(Base):
     """User model for authentication and tracking preferences"""

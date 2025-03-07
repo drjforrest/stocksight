@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Index, Table
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-
-from backend.models.base import Base, metadata
+from datetime import datetime
+from models.base import Base, metadata
 
 class StockPrice(Base):
     """Model for storing stock price data."""

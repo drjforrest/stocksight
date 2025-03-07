@@ -6,10 +6,10 @@ from xml.etree.ElementTree import Element, SubElement, tostring
 import hashlib
 import secrets
 
-from backend.config.database import get_db
-from backend.models.tracked_company import TrackedCompany
-from backend.models.news import NewsArticle, NewsCompanyMention
-from backend.services.cache import CacheService
+from config.database import get_db
+from models.tracked_company import TrackedCompany
+from models.news import NewsArticle, NewsCompanyMention
+from services.cache import CacheService
 
 router = APIRouter(
     prefix="/rss",

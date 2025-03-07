@@ -3,14 +3,14 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 
 # Import the database base model
-from backend.config.database import Base
+from config.database import Base
 
 # Explicitly import all models so Alembic detects them
-from backend.models.stock import *  
-from backend.models.user import *  
-from backend.models.tracked_company import *  
-from backend.models.competitor import *  
-from backend.models.ipo import *  
+from models.stock import *  
+from models.user import *  
+from models.tracked_company import *  
+from models.competitor import *  
+from models.ipo import *  
 
 # Load Alembic config
 config = context.config

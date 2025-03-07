@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     redis_db: int = 0
     redis_password: Optional[str] = None
     
+    @property
+    def redis_url(self) -> str:
+        """Constructs Redis URL from individual settings"""
+        auth = f":{self.redis_password}@" if self.redis_password else ""
+        return f"redis://{auth}{self.redis_host}:{self.redis_port}/{self.redis_db}"
+    
     # Cache Settings
     cache_ttl: int = 3600  # Default cache TTL in seconds
     

@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, func
 from sqlalchemy.orm import relationship
 from pydantic import BaseModel
 from datetime import datetime
-from backend.config.database import Base
+from config.database import Base
 
 # SQLAlchemy Model
 class TrackedCompany(Base):

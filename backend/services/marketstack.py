@@ -1,25 +1,42 @@
 import os
 import json
-import aioredis
 import httpx
-from datetime import datetime
+from datetime import datetime, timedelta
+from redis import asyncio as aioredis
 from typing import Optional, List, Dict, Any
 from fastapi import HTTPException
 from functools import wraps
 import asyncio
+from config.settings import get_settings
+
+settings = get_settings()
 
 # Initialize Redis for caching API responses
-redis = aioredis.from_url("redis://localhost", decode_responses=True)
+redis = aioredis.from_url(
+    settings.redis_url,
+    encoding="utf-8",
+    decode_responses=True
+)
 
 class MarketStackClient:
     """Client for interacting with the MarketStack API with caching & rate handling."""
 
-    def __init__(self):
-        self.api_key = os.getenv('MARKETSTACK_API_KEY')
-        if not self.api_key:
-            raise ValueError("MARKETSTACK_API_KEY environment variable is not set")
+    def __init__(self, api_key: str):
+        self.api_key = api_key
         self.base_url = "http://api.marketstack.com/v1"
-        self.client = httpx.AsyncClient(timeout=30.0)
+        self.redis = aioredis.from_url(
+            settings.redis_url,
+            encoding="utf-8",
+            decode_responses=True
+        )
+
+    async def __aenter__(self):
+        self.client = httpx.AsyncClient()
+        return self
+        
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.client.aclose()
+        await self.redis.close()
 
     async def _get_cached_response(self, key: str) -> Optional[Dict]:
         """Retrieve cached response if available."""
