@@ -1,11 +1,15 @@
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
-import { Inter } from "next/font/google";
+import { Providers } from './providers';
 import Layout from '@/components/Layout';
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
+const inter = Inter({ subsets: ['latin'] });
+
+export const metadata: Metadata = {
+  title: 'StockSight',
+  description: 'Track and analyze biotech companies',
+};
 
 export default function RootLayout({
   children,
@@ -14,10 +18,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} antialiased`}>
-        <Layout>
-          {children}
-        </Layout>
+      <body className={inter.className}>
+        <Providers>
+          <Layout>
+            {children}
+          </Layout>
+        </Providers>
       </body>
     </html>
   );

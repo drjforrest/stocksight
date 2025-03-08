@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,11 +12,11 @@ import {
   Tooltip,
   Legend,
   Filler,
-} from 'chart.js';
-import { Line } from 'react-chartjs-2';
-import { Card } from './ui/card';
-import axios from 'axios';
-import type { IndexType } from '@/types/market';
+} from "chart.js";
+import { Line } from "react-chartjs-2";
+import { Card } from "./ui/card";
+import axios from "axios";
+import type { IndexType } from "@/types/market";
 
 ChartJS.register(
   CategoryScale,
@@ -27,7 +27,7 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
 );
 
 interface MarketTrendData {
@@ -39,24 +39,29 @@ interface MarketTrendData {
 interface MarketMetrics {
   volatility: number;
   moving_average: number;
-  trend: 'up' | 'down' | 'neutral';
+  trend: "up" | "down" | "neutral";
 }
 
-type ChartType = 'line' | 'area' | 'candlestick';
+type ChartType = "line" | "area" | "candlestick";
 
 interface MarketTrendsProps {
   data?: any[];
   fullView?: boolean;
 }
 
-export default function MarketTrends({ data: initialData, fullView = false }: MarketTrendsProps) {
+export default function MarketTrends({
+  data: initialData,
+  fullView = false,
+}: MarketTrendsProps) {
   const [data, setData] = useState<MarketTrendData[]>(initialData || []);
   const [metrics, setMetrics] = useState<MarketMetrics | null>(null);
   const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
-  const [timeframe, setTimeframe] = useState<'1d' | '1w' | '1m' | '3m' | '1y'>('1m');
-  const [index, setIndex] = useState<IndexType>('BIOTECH');
-  const [chartType, setChartType] = useState<ChartType>('line');
+  const [timeframe, setTimeframe] = useState<"1d" | "1w" | "1m" | "3m" | "1y">(
+    "1m",
+  );
+  const [index, setIndex] = useState<IndexType>("BIOTECH");
+  const [chartType, setChartType] = useState<ChartType>("line");
 
   useEffect(() => {
     async function fetchData() {
@@ -64,16 +69,16 @@ export default function MarketTrends({ data: initialData, fullView = false }: Ma
         setLoading(true);
         const [trendsResponse, metricsResponse] = await Promise.all([
           axios.get(`/api/market/trends/${index}`, {
-            params: { timeframe }
+            params: { timeframe },
           }),
-          axios.get(`/api/market/metrics/${index}`)
+          axios.get(`/api/market/metrics/${index}`),
         ]);
-        
+
         setData(trendsResponse.data);
         setMetrics(metricsResponse.data);
         setError(null);
       } catch (err) {
-        setError('Failed to fetch market trend data');
+        setError("Failed to fetch market trend data");
         console.error(err);
       } finally {
         setLoading(false);
@@ -85,18 +90,20 @@ export default function MarketTrends({ data: initialData, fullView = false }: Ma
     }
   }, [timeframe, index, initialData]);
 
-  if (loading) return (
-    <Card className="animate-pulse">
-      <div className="h-64 bg-gray-200 rounded"></div>
-    </Card>
-  );
-  
-  if (error) return (
-    <Card className="bg-red-50">
-      <div className="text-red-500 p-4">{error}</div>
-    </Card>
-  );
-  
+  if (loading)
+    return (
+      <Card className="animate-pulse">
+        <div className="h-64 bg-gray-200 rounded"></div>
+      </Card>
+    );
+
+  if (error)
+    return (
+      <Card className="bg-red-50">
+        <div className="text-red-500 p-4">{error}</div>
+      </Card>
+    );
+
   if (!data.length) return null;
 
   const getChartData = () => {
@@ -104,51 +111,51 @@ export default function MarketTrends({ data: initialData, fullView = false }: Ma
       labels: data.map((item) => new Date(item.date).toLocaleDateString()),
       datasets: [
         {
-          label: 'Market Index',
+          label: "Market Index",
           data: data.map((item) => item.index_value),
-          borderColor: 'rgb(54, 162, 235)',
-          backgroundColor: 'rgba(54, 162, 235, 0.1)',
+          borderColor: "rgb(54, 162, 235)",
+          backgroundColor: "rgba(54, 162, 235, 0.1)",
           tension: 0.4,
-          fill: chartType === 'area',
-          pointRadius: chartType === 'line' ? 4 : 0,
-          pointHoverRadius: chartType === 'line' ? 8 : 0,
-          pointBackgroundColor: 'rgb(54, 162, 235)',
-          pointHoverBackgroundColor: 'white',
-          pointBorderColor: 'white',
-          pointHoverBorderColor: 'rgb(54, 162, 235)',
+          fill: chartType === "area",
+          pointRadius: chartType === "line" ? 4 : 0,
+          pointHoverRadius: chartType === "line" ? 8 : 0,
+          pointBackgroundColor: "rgb(54, 162, 235)",
+          pointHoverBackgroundColor: "white",
+          pointBorderColor: "white",
+          pointHoverBorderColor: "rgb(54, 162, 235)",
           pointBorderWidth: 2,
           pointHoverBorderWidth: 2,
         },
         {
-          label: 'Volume',
+          label: "Volume",
           data: data.map((item) => item.volume),
-          borderColor: 'rgb(75, 192, 192)',
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          borderColor: "rgb(75, 192, 192)",
+          backgroundColor: "rgba(75, 192, 192, 0.2)",
           tension: 0.4,
-          yAxisID: 'volume',
+          yAxisID: "volume",
           fill: true,
           pointRadius: 0,
         },
       ],
     };
 
-    if (chartType === 'candlestick') {
+    if (chartType === "candlestick") {
       // Modify dataset for candlestick visualization
       baseDataset.datasets[0] = {
-        label: 'Market Index',
+        label: "Market Index",
         data: data.map((item) => item.index_value),
-        borderColor: 'rgb(75, 192, 192)',
-        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+        borderColor: "rgb(75, 192, 192)",
+        backgroundColor: "rgba(75, 192, 192, 0.1)",
         tension: 0,
         fill: false,
         pointRadius: 6,
         pointHoverRadius: 8,
-        pointBackgroundColor: 'rgb(75, 192, 192)',
-        pointHoverBackgroundColor: 'white',
-        pointBorderColor: 'white',
-        pointHoverBorderColor: 'rgb(75, 192, 192)',
+        pointBackgroundColor: "rgb(75, 192, 192)",
+        pointHoverBackgroundColor: "white",
+        pointBorderColor: "white",
+        pointHoverBorderColor: "rgb(75, 192, 192)",
         pointBorderWidth: 2,
-        pointHoverBorderWidth: 2
+        pointHoverBorderWidth: 2,
       };
     }
 
@@ -159,19 +166,19 @@ export default function MarketTrends({ data: initialData, fullView = false }: Ma
     responsive: true,
     animation: {
       duration: 2000,
-      easing: 'easeOutQuart' as const,
+      easing: "easeOutQuart" as const,
     },
     interaction: {
-      mode: 'index' as const,
+      mode: "index" as const,
       intersect: false,
-      axis: 'x' as const,
+      axis: "x" as const,
     },
     plugins: {
       legend: {
-        position: 'top' as const,
+        position: "top" as const,
         labels: {
           usePointStyle: true,
-          pointStyle: 'circle',
+          pointStyle: "circle",
           padding: 20,
         },
       },
@@ -180,22 +187,22 @@ export default function MarketTrends({ data: initialData, fullView = false }: Ma
         text: `${index} Index Performance`,
         font: {
           size: 16,
-          weight: 'bold' as const,
+          weight: "bold" as const,
         },
         padding: 20,
       },
       tooltip: {
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        titleColor: '#000',
-        bodyColor: '#666',
+        backgroundColor: "rgba(255, 255, 255, 0.9)",
+        titleColor: "#000",
+        bodyColor: "#666",
         bodySpacing: 4,
         padding: 12,
-        borderColor: '#ddd',
+        borderColor: "#ddd",
         borderWidth: 1,
         usePointStyle: true,
         callbacks: {
-          label: function(context: any) {
-            const label = context.dataset.label || '';
+          label: function (context: any) {
+            const label = context.dataset.label || "";
             const value = context.parsed.y;
             if (context.datasetIndex === 0) {
               return `${label}: ${value.toFixed(2)}`;
@@ -217,27 +224,27 @@ export default function MarketTrends({ data: initialData, fullView = false }: Ma
         },
       },
       y: {
-        type: 'linear' as const,
+        type: "linear" as const,
         display: true,
-        position: 'left' as const,
+        position: "left" as const,
         grid: {
-          color: 'rgba(0, 0, 0, 0.1)',
+          color: "rgba(0, 0, 0, 0.1)",
         },
         ticks: {
-          callback: function(value: any) {
+          callback: function (value: any) {
             return value.toFixed(2);
           },
         },
       },
       volume: {
-        type: 'linear' as const,
+        type: "linear" as const,
         display: true,
-        position: 'right' as const,
+        position: "right" as const,
         grid: {
           drawOnChartArea: false,
         },
         ticks: {
-          callback: function(value: any) {
+          callback: function (value: any) {
             return value.toLocaleString();
           },
         },
@@ -247,9 +254,12 @@ export default function MarketTrends({ data: initialData, fullView = false }: Ma
 
   const getTrendColor = (trend: string) => {
     switch (trend) {
-      case 'up': return 'text-green-600';
-      case 'down': return 'text-red-600';
-      default: return 'text-yellow-600';
+      case "up":
+        return "text-green-600";
+      case "down":
+        return "text-red-600";
+      default:
+        return "text-yellow-600";
     }
   };
 

@@ -1,0 +1,36 @@
+Tree diagram for: /Users/drjforrest/Development/DevProjects/WebDev/stocksight/frontend/src/components/
+Generated on: 2025-03-08 00:42:13
+
+├── AdminPanel.tsx
+├── WelcomeModel.tsx
+├── about
+│   └── About.tsx
+├── analyze
+│   ├── MarketShareChart.tsx
+│   ├── MarketTrends.tsx
+│   └── StockChart.tsx
+├── browse
+│   ├── BrowseCompanies.tsx
+│   ├── BrowseHelp.tsx
+│   └── StockPrice.tsx
+├── dashboard-home
+│   ├── Dashboard.tsx
+│   ├── MarketOverview.tsx
+│   ├── TrackedCompaniesList.tsx
+│   └── TrackedCompanySummary.tsx
+├── directory_tree.txt
+├── layout
+│   ├── Layout.tsx
+│   ├── Navbar.tsx
+│   └── Sidebar.tsx
+├── report
+│   └── ReportBuilder.tsx
+├── track
+│   ├── CompanyVisualizations.tsx
+│   ├── IPOInsights.tsx
+│   ├── PipelineComparisonChart.tsx
+│   ├── TrackedCompanies.tsx
+│   └── TrackedSearch.tsx
+└── ui
+    ├── button.tsx
+    └── card.tsx

@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
-import Dashboard from '../components/Dashboard';
-import AdminPanel from '../components/AdminPanel';
+import React, { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+import Dashboard from "../components/dashboard-home/Dashboard";
+import AdminPanel from "../components/AdminPanel";
 
 export default function Page() {
   const [featureFlags, setFeatureFlags] = useState({ competitor_score: false });
@@ -12,12 +12,12 @@ export default function Page() {
   useEffect(() => {
     const fetchFeatureFlags = async () => {
       try {
-        const response = await api.get('/feature-flags');
+        const response = await api.get("/feature-flags");
         setFeatureFlags(response.data);
         setError(null);
       } catch (err) {
-        console.error('Error fetching feature flags:', err);
-        setError('Failed to load feature flags');
+        console.error("Error fetching feature flags:", err);
+        setError("Failed to load feature flags");
       }
     };
 
@@ -31,7 +31,7 @@ export default function Page() {
           {error}
         </div>
       )}
-      
+
       {/* Dashboard with Tabs */}
       <Dashboard />
 

@@ -1,28 +1,39 @@
-'use client';
+"use client";
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Bar } from "react-chartjs-2";
 
-export default function PipelineComparisonChart({ symbols }: { symbols: string[] }) {
+interface PipelineComparisonChartProps {
+  symbols: string[];
+}
+
+export default function PipelineComparisonChart({
+  symbols,
+}: PipelineComparisonChartProps) {
   const [data, setData] = useState<any>(null);
 
   useEffect(() => {
-    const fetchPipelineComparison = async () => {
+    if (symbols.length === 0) return;
+
+    const fetchPipelineData = async () => {
       try {
-        const response = await axios.get(`/api/competitors/analysis/pipeline-comparison`, {
-          params: { symbols },
-        });
+        const response = await axios.get(
+          "/api/competitors/analysis/pipeline-comparison",
+          {
+            params: { symbols },
+          },
+        );
         setData(response.data);
       } catch (error) {
-        console.error("Failed to fetch pipeline comparison data", error);
+        console.error("Error fetching pipeline data", error);
       }
     };
 
-    fetchPipelineComparison();
+    fetchPipelineData();
   }, [symbols]);
 
-  if (!data) return <p>Loading...</p>;
+  if (!data) return <p className="text-center">Loading pipeline data...</p>;
 
   const chartData = {
     labels: symbols,
@@ -46,6 +57,11 @@ export default function PipelineComparisonChart({ symbols }: { symbols: string[]
         label: "Phase 3",
         data: data.stages.map((s: any) => s.phase_3),
         backgroundColor: "#4CAF50",
+      },
+      {
+        label: "Phase 4",
+        data: data.stages.map((s: any) => s.phase_4),
+        backgroundColor: "#8E44AD",
       },
     ],
   };

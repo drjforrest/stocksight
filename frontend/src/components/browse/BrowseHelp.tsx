@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Dialog,
   DialogTitle,
@@ -11,7 +11,8 @@ import {
   Divider,
   IconButton,
   Box,
-} from '@mui/material';
+  Button,
+} from "@mui/material";
 import {
   Close,
   BarChart,
@@ -23,7 +24,10 @@ import {
   GridView,
   RssFeed,
   OpenInNew,
-} from '@mui/icons-material';
+  FileDownload,
+  LocalPharmacy,
+  Science,
+} from "@mui/icons-material";
 
 interface BrowseHelpProps {
   open: boolean;
@@ -32,12 +36,7 @@ interface BrowseHelpProps {
 
 export default function BrowseHelp({ open, onClose }: BrowseHelpProps) {
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="md"
-      fullWidth
-    >
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           Browse & Analytics Features
@@ -47,6 +46,7 @@ export default function BrowseHelp({ open, onClose }: BrowseHelpProps) {
         </Box>
       </DialogTitle>
       <DialogContent>
+        {/* --- Views Section --- */}
         <Typography variant="h6" gutterBottom>
           Views
         </Typography>
@@ -57,7 +57,7 @@ export default function BrowseHelp({ open, onClose }: BrowseHelpProps) {
             </ListItemIcon>
             <ListItemText
               primary="Card View"
-              secondary="Browse companies in a card layout showing key information including market cap, therapeutic areas, approved drugs, and clinical trials."
+              secondary="Browse biotech companies in a card format with key insights."
             />
           </ListItem>
           <ListItem>
@@ -66,13 +66,13 @@ export default function BrowseHelp({ open, onClose }: BrowseHelpProps) {
             </ListItemIcon>
             <ListItemText
               primary="Analytics View"
-              secondary="Visualize market trends and patterns across companies using interactive charts and graphs."
+              secondary="Visualize biotech market trends and patterns."
             />
           </ListItem>
         </List>
-
         <Divider sx={{ my: 2 }} />
 
+        {/* --- Filtering & Search Section --- */}
         <Typography variant="h6" gutterBottom>
           Filtering & Search
         </Typography>
@@ -83,13 +83,39 @@ export default function BrowseHelp({ open, onClose }: BrowseHelpProps) {
             </ListItemIcon>
             <ListItemText
               primary="Advanced Filters"
-              secondary="Filter companies by therapeutic area, market cap range, clinical trial phase, and presence of approved drugs."
+              secondary="Filter by market cap, therapeutic area, clinical trial phase, and FDA status."
             />
           </ListItem>
         </List>
-
         <Divider sx={{ my: 2 }} />
 
+        {/* --- FDA Integration Section --- */}
+        <Typography variant="h6" gutterBottom>
+          FDA Integration
+        </Typography>
+        <List>
+          <ListItem>
+            <ListItemIcon>
+              <LocalPharmacy />
+            </ListItemIcon>
+            <ListItemText
+              primary="FDA Approvals & Submissions"
+              secondary="Track how many drugs a company has submitted or had approved."
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemIcon>
+              <Science />
+            </ListItemIcon>
+            <ListItemText
+              primary="Active Clinical Trials"
+              secondary="See how many ongoing trials the company is involved in."
+            />
+          </ListItem>
+        </List>
+        <Divider sx={{ my: 2 }} />
+
+        {/* --- Analytics Features Section --- */}
         <Typography variant="h6" gutterBottom>
           Analytics Features
         </Typography>
@@ -100,16 +126,7 @@ export default function BrowseHelp({ open, onClose }: BrowseHelpProps) {
             </ListItemIcon>
             <ListItemText
               primary="Market Cap Distribution"
-              secondary="Bar chart showing the distribution of companies across different market cap ranges (0-1B, 1-5B, 5-10B, 10-50B, 50B+)."
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon>
-              <BarChart />
-            </ListItemIcon>
-            <ListItemText
-              primary="Clinical Trial Pipeline"
-              secondary="Overview of clinical trials across all phases (1-4) for the filtered set of companies."
+              secondary="See how biotech companies distribute across market cap ranges."
             />
           </ListItem>
           <ListItem>
@@ -118,7 +135,7 @@ export default function BrowseHelp({ open, onClose }: BrowseHelpProps) {
             </ListItemIcon>
             <ListItemText
               primary="Therapeutic Areas"
-              secondary="Pie chart showing the distribution of top therapeutic areas among the filtered companies."
+              secondary="Understand the market share of different biotech fields."
             />
           </ListItem>
           <ListItem>
@@ -127,13 +144,13 @@ export default function BrowseHelp({ open, onClose }: BrowseHelpProps) {
             </ListItemIcon>
             <ListItemText
               primary="Market Cap vs Development"
-              secondary="Scatter plot comparing company market caps to their clinical development activity. Bubble size indicates number of approved drugs."
+              secondary="Compare company size vs clinical development activity."
             />
           </ListItem>
         </List>
-
         <Divider sx={{ my: 2 }} />
 
+        {/* --- Company Management Section --- */}
         <Typography variant="h6" gutterBottom>
           Company Management
         </Typography>
@@ -144,7 +161,7 @@ export default function BrowseHelp({ open, onClose }: BrowseHelpProps) {
             </ListItemIcon>
             <ListItemText
               primary="Compare Companies"
-              secondary="Select up to 3 companies to compare their key metrics and development pipelines side by side."
+              secondary="Select up to 3 companies to compare side-by-side."
             />
           </ListItem>
           <ListItem>
@@ -153,13 +170,30 @@ export default function BrowseHelp({ open, onClose }: BrowseHelpProps) {
             </ListItemIcon>
             <ListItemText
               primary="Track Companies"
-              secondary="Add companies to your tracking list for monitoring news, updates, and developments."
+              secondary="Save companies for real-time updates & alerts."
             />
           </ListItem>
         </List>
-
         <Divider sx={{ my: 2 }} />
 
+        {/* --- Report Builder Section --- */}
+        <Typography variant="h6" gutterBottom>
+          Report Builder
+        </Typography>
+        <List>
+          <ListItem>
+            <ListItemIcon>
+              <FileDownload />
+            </ListItemIcon>
+            <ListItemText
+              primary="Generate Custom Reports"
+              secondary="Export insights into PDFs or share via email."
+            />
+          </ListItem>
+        </List>
+        <Divider sx={{ my: 2 }} />
+
+        {/* --- RSS Feed Section --- */}
         <Typography variant="h6" gutterBottom>
           RSS Feed Integration
         </Typography>
@@ -170,75 +204,35 @@ export default function BrowseHelp({ open, onClose }: BrowseHelpProps) {
             </ListItemIcon>
             <ListItemText
               primary="Personalized RSS Feed"
-              secondary={
-                <React.Fragment>
-                  <Typography component="span" variant="body2" color="text.primary">
-                    Get updates for your tracked companies in any RSS reader:
-                  </Typography>
-                  <List dense>
-                    <ListItem>
-                      • Each user gets a unique, secure RSS feed URL
-                    </ListItem>
-                    <ListItem>
-                      • Feed includes news, sentiment analysis, and company mentions
-                    </ListItem>
-                    <ListItem>
-                      • Updates hourly with fresh content
-                    </ListItem>
-                    <ListItem>
-                      • Works with any standard RSS reader (Feedly, NewsBlur, etc.)
-                    </ListItem>
-                  </List>
-                </React.Fragment>
-              }
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemIcon>
-              <OpenInNew />
-            </ListItemIcon>
-            <ListItemText
-              primary="How to Use Your RSS Feed"
-              secondary={
-                <React.Fragment>
-                  <Typography component="span" variant="body2">
-                    1. Go to your profile settings to get your unique RSS feed URL
-                  </Typography>
-                  <Typography component="span" variant="body2" display="block">
-                    2. Copy the URL and add it to your preferred RSS reader
-                  </Typography>
-                  <Typography component="span" variant="body2" display="block">
-                    3. Your reader will automatically fetch updates about your tracked companies
-                  </Typography>
-                  <Typography component="span" variant="body2" display="block" color="primary" sx={{ mt: 1 }}>
-                    Pro Tip: Use RSS feed filters in your reader to focus on specific companies or news types
-                  </Typography>
-                </React.Fragment>
-              }
+              secondary="Get biotech updates for your tracked companies in an RSS reader."
             />
           </ListItem>
         </List>
-
         <Divider sx={{ my: 2 }} />
 
+        {/* --- Pro Tips Section --- */}
         <Typography variant="body2" color="text.secondary">
-          Pro Tips:
+          <strong>Pro Tips:</strong>
           <List dense>
             <ListItem>
-              • Use market cap filters to focus on companies of similar size
+              • Use market cap filters to compare companies of similar size.
             </ListItem>
             <ListItem>
-              • The analytics view automatically updates as you adjust filters
+              • Analytics view updates dynamically as you refine your search.
             </ListItem>
             <ListItem>
-              • Hover over chart elements for detailed information
-            </ListItem>
-            <ListItem>
-              • Compare companies in similar therapeutic areas to find potential competitors
+              • Hover over chart elements for detailed insights.
             </ListItem>
           </List>
         </Typography>
+
+        {/* --- Close Button --- */}
+        <Box display="flex" justifyContent="flex-end" mt={2}>
+          <Button onClick={onClose} variant="contained" color="primary">
+            Got it!
+          </Button>
+        </Box>
       </DialogContent>
     </Dialog>
   );
-} 
+}
