@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from models.ipo import IPOListing, IPOFinancials, IPOUpdate, IPOStatus
 from api.schemas.ipo import IPOListingCreate, IPOFinancialsCreate, IPOUpdateCreate
-from services.analysis import MarketAnalysis
+from services.analyses import MarketAnalysis
 
 class IPOService:
     def __init__(self, db: Session):

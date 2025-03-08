@@ -1,12 +1,12 @@
 'use client';
 
 import React from 'react';
-import BrowseCompanies from '@/components/browse/BrowseCompanies';
+import BrowseCompareTabs from '@/components/browse/BrowseCompareTabs';
 
 export default function BrowsePage() {
   return (
     <div className="p-6">
-      <BrowseCompanies />
+      <BrowseCompareTabs />
     </div>
   );
 } 

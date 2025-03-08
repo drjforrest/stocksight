@@ -1,176 +1,71 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { FaTrash, FaExternalLinkAlt } from "react-icons/fa";
-import { useRouter } from "next/navigation";
+import React from "react";
 import { Card } from "../ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogActions,
-  Button,
-} from "@mui/material";
+import { TrackedCompaniesListProps } from "./types";
 
-interface TrackedCompany {
-  symbol: string;
-  name: string;
-  market_cap: number;
-  sector: string;
-  price: number;
-}
-
-export default function TrackedCompaniesList() {
-  const [trackedCompanies, setTrackedCompanies] = useState<TrackedCompany[]>(
-    [],
-  );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const router = useRouter();
-  const userId = 1; // TODO: Get from auth context
-
-  useEffect(() => {
-    fetchTrackedCompanies();
-  }, []);
-
-  const fetchTrackedCompanies = async () => {
-    try {
-      const response = await axios.get(`/api/tracked/${userId}`);
-      setTrackedCompanies(response.data);
-      setError(null);
-    } catch (err) {
-      setError("Error fetching tracked companies");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRemoveClick = (symbol: string) => {
-    setSelectedCompany(symbol);
-    setConfirmOpen(true);
-  };
-
-  const confirmRemoveCompany = async () => {
-    if (!selectedCompany) return;
-    try {
-      await axios.delete(`/api/tracked/${userId}/${selectedCompany}`);
-      setTrackedCompanies((prev) =>
-        prev.filter((company) => company.symbol !== selectedCompany),
-      );
-    } catch (err) {
-      setError(`Error removing ${selectedCompany}`);
-      console.error(err);
-    } finally {
-      setConfirmOpen(false);
-      setSelectedCompany(null);
-    }
-  };
-
-  const formatCurrency = (value: number) => {
-    if (value >= 1e12) return `$${(value / 1e12).toFixed(1)}T`;
-    if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
-    if (value >= 1e6) return `$${(value / 1e6).toFixed(1)}M`;
-    return `$${value}`;
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-32">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return <Card className="bg-red-50 text-red-700 p-4 rounded">{error}</Card>;
-  }
-
+export default function TrackedCompaniesList({
+  trackedCompanies,
+  onRemoveCompany,
+}: TrackedCompaniesListProps) {
   if (trackedCompanies.length === 0) {
     return (
-      <div className="text-center py-12 bg-white rounded-lg shadow-md">
-        <h3 className="text-2xl font-semibold mb-4">No Companies Tracked</h3>
-        <p className="text-gray-600 mb-6 max-w-md mx-auto">
-          Start tracking companies to receive updates and insights.
+      <Card className="p-6 text-center text-gray-500">
+        <p>No companies tracked yet.</p>
+        <p className="text-sm mt-2">
+          Use the Browse page to find and track companies.
         </p>
-        <button
-          onClick={() => router.push("/browse")}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center justify-center gap-2 mx-auto"
-        >
-          Track Companies
-        </button>
-      </div>
+      </Card>
     );
   }
 
   return (
-    <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {trackedCompanies.map((company) => (
-          <Card
-            key={company.symbol}
-            className="p-6 shadow-md bg-white rounded-lg"
-          >
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">
-                {company.name} ({company.symbol})
-              </h3>
-              <button
-                onClick={() => handleRemoveClick(company.symbol)}
-                className="text-red-500 hover:text-red-700"
-                title="Remove from tracking"
-              >
-                <FaTrash />
-              </button>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {trackedCompanies.map((company) => (
+        <Card key={company.symbol} className="p-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="font-bold">{company.name}</h3>
+              <p className="text-sm text-gray-500">{company.symbol}</p>
             </div>
-            <p className="text-gray-600 text-sm mt-1">{company.sector}</p>
-
-            <div className="flex justify-between mt-4">
-              <div>
-                <p className="text-sm text-gray-500">Market Cap</p>
-                <p className="text-lg font-semibold">
-                  {formatCurrency(company.market_cap)}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Stock Price</p>
-                <p className="text-lg font-semibold">
-                  ${company.price.toFixed(2)}
-                </p>
-              </div>
-            </div>
-
             <button
-              onClick={() => router.push(`/tracked/${company.symbol}`)}
-              className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded flex items-center justify-center gap-2"
+              onClick={() => onRemoveCompany(company.symbol)}
+              className="text-red-500 hover:text-red-700"
             >
-              <FaExternalLinkAlt />
-              View Details
+              Remove
             </button>
-          </Card>
-        ))}
-      </div>
-
-      {/* Confirmation Dialog */}
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>Remove Tracked Company</DialogTitle>
-        <DialogContent>
-          <p>
-            Are you sure you want to remove {selectedCompany} from tracking?
-          </p>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={confirmRemoveCompany} color="error">
-            Remove
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </>
+          </div>
+          
+          <div className="mt-4 space-y-2">
+            <div className="flex justify-between">
+              <span className="text-gray-500">Market Cap</span>
+              <span>${(company.market_cap / 1e9).toFixed(2)}B</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Price</span>
+              <span className="flex items-center gap-2">
+                ${company.price.toFixed(2)}
+                <span className={company.change_percent >= 0 ? "text-green-500" : "text-red-500"}>
+                  {company.change_percent >= 0 ? "+" : ""}
+                  {company.change_percent.toFixed(2)}%
+                </span>
+              </span>
+            </div>
+            {company.active_trials !== undefined && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Active Trials</span>
+                <span>{company.active_trials}</span>
+              </div>
+            )}
+            {company.fda_submissions !== undefined && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">FDA Submissions</span>
+                <span>{company.fda_submissions}</span>
+              </div>
+            )}
+          </div>
+        </Card>
+      ))}
+    </div>
   );
 }
