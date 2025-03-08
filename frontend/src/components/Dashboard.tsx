@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from "react";
-import axios from 'axios';
 import StockChart from "./StockChart";
 import MarketTrends from "./MarketTrends";
 import IPOInsights from "./IPOInsights";
 import { Card, CardContent } from "./ui/card";
+import { getMarketTrends, getStockPrices, getIPOListings, getFeatureFlags } from "@/lib/api-functions";
+import { mockLogin } from "@/lib/auth";
 
 type TabType = 'overview' | 'market' | 'ipo';
 
@@ -45,13 +46,26 @@ export default function Dashboard() {
     error: null
   });
 
+  // Handle authentication on mount
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        await mockLogin(); // This will set up our dev token
+      } catch (err) {
+        console.error("Failed to initialize auth:", err);
+      }
+    };
+
+    initAuth();
+  }, []);
+
   // Fetch market data
   useEffect(() => {
     const fetchMarketData = async () => {
       try {
-        const response = await axios.get('/api/market/trends');
+        const trends = await getMarketTrends('BIOTECH', '1m');
         setMarketData({
-          trends: response.data,
+          trends,
           loading: false,
           error: null
         });
@@ -72,9 +86,9 @@ export default function Dashboard() {
     const fetchStockData = async () => {
       try {
         // For now, using AAPL as example. You should replace this with selected company
-        const response = await axios.get('/api/stocks/AAPL/prices');
+        const prices = await getStockPrices('AAPL');
         setStockData({
-          prices: response.data,
+          prices,
           loading: false,
           error: null
         });
@@ -94,9 +108,9 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchIPOData = async () => {
       try {
-        const response = await axios.get('/api/ipos');
+        const listings = await getIPOListings();
         setIPOData({
-          listings: response.data,
+          listings,
           loading: false,
           error: null
         });

@@ -2,10 +2,9 @@ import os
 import json
 import httpx
 from datetime import datetime, timedelta
-from redis import asyncio as aioredis
-from typing import Optional, List, Dict, Any, Union
+import redis.asyncio as aioredis
+from typing import Optional, Dict, Any, List, Union, TypedDict, cast
 from fastapi import HTTPException
-from functools import wraps
 import asyncio
 from config.settings import get_settings
 
@@ -13,10 +12,14 @@ settings = get_settings()
 
 # Initialize Redis for caching API responses
 redis = aioredis.from_url(
-    settings.redis_url,
+    f"redis://{settings.redis_host}:{settings.redis_port}/{settings.redis_db}",
     encoding="utf-8",
     decode_responses=True
 )
+
+class CacheData(TypedDict):
+    data: Dict[str, Any]
+    timestamp: float
 
 class MarketStackClient:
     """Client for interacting with the MarketStack API with caching & rate handling."""
@@ -30,16 +33,11 @@ class MarketStackClient:
         self.api_key = api_key
         self.base_url = "http://api.marketstack.com/v1"
         self.client = httpx.AsyncClient()
-        self.redis = aioredis.from_url(
-            settings.redis_url,
-            encoding="utf-8",
-            decode_responses=True
-        )
 
     async def cleanup(self):
         """Cleanup resources."""
         await self.client.aclose()
-        await self.redis.close()
+        await redis.close()
 
     async def __aenter__(self):
         return self
@@ -47,45 +45,49 @@ class MarketStackClient:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.cleanup()
 
-    async def _get_cached_response(self, key: str) -> Optional[Dict]:
+    async def _get_cached_response(self, key: str) -> Optional[Dict[str, Any]]:
         """Retrieve cached response if available."""
-        cached = await redis.get(key)
-        return json.loads(cached) if cached else None
+        try:
+            cached = await redis.get(key)
+            if cached:
+                cache_data = json.loads(cached)
+                if isinstance(cache_data, dict) and 'data' in cache_data:
+                    return cast(Dict[str, Any], cache_data['data'])
+            return None
+        except (json.JSONDecodeError, TypeError):
+            return None
 
-    async def _cache_response(self, key: str, data: Dict, ttl: int = 3600):
+    async def _cache_response(self, key: str, data: Dict[str, Any], ttl: int = 3600) -> None:
         """Store API response in cache for a given time-to-live (TTL)."""
-        await redis.set(key, json.dumps(data), ex=ttl)
+        try:
+            cache_data: CacheData = {
+                'data': data,
+                'timestamp': datetime.now().timestamp()
+            }
+            # Convert ttl to int to satisfy Redis type requirements
+            await redis.setex(name=key, time=int(ttl), value=json.dumps(cache_data))
+        except (TypeError, ValueError) as e:
+            print(f"Error caching response: {e}")
+            # Don't raise the error - just log it and continue
+            pass
 
     async def _make_request(
         self,
         endpoint: str,
-        params: Dict[str, Any] = None,
+        params: Optional[Dict[str, Any]] = None,
         cache_ttl: int = 3600
-    ) -> Dict:
-        """Make a request to MarketStack with caching and rate limiting.
-        
-        Args:
-            endpoint (str): API endpoint path
-            params (Dict[str, Any], optional): Query parameters
-            cache_ttl (int, optional): Cache time-to-live in seconds. Defaults to 1 hour.
-            
-        Returns:
-            Dict: API response data
-            
-        Raises:
-            HTTPException: On API errors or rate limiting
-        """
-        if params is None:
-            params = {}
-        params['access_key'] = self.api_key
+    ) -> Dict[str, Any]:
+        """Make a request to MarketStack with caching and rate limiting."""
+        request_params = params.copy() if params is not None else {}
+        request_params['access_key'] = self.api_key
 
-        cache_key = f"marketstack:{endpoint}:{json.dumps(params, sort_keys=True)}"
+        cache_key = f"marketstack:{endpoint}:{json.dumps(request_params, sort_keys=True)}"
         cached_response = await self._get_cached_response(cache_key)
         if cached_response:
             return cached_response
 
         try:
-            response = await self.client.get(f"{self.base_url}/{endpoint}", params=params)
+            response = await self.client.get(f"{self.base_url}/{endpoint}", params=request_params)
             response.raise_for_status()
             data = response.json()
 
@@ -102,8 +104,8 @@ class MarketStackClient:
             )
         except httpx.RequestError as e:
             raise HTTPException(
-                status_code=503,
-                detail=f"MarketStack service unavailable: {str(e)}"
+                status_code=500,
+                detail=f"Request Error: {str(e)}"
             )
 
     async def get_eod_data(
@@ -195,7 +197,7 @@ class MarketStackClient:
         Returns:
             Dict: Ticker information including symbol, name, and exchange
         """
-        params = {'limit': limit, 'offset': offset}
+        params: Dict[str, Union[str, int]] = {'limit': limit, 'offset': offset}
         if search:
             params['search'] = search
 
@@ -217,7 +219,7 @@ class MarketStackClient:
         Returns:
             Dict: Exchange information including name, MIC, and country
         """
-        params = {'limit': limit, 'offset': offset}
+        params: Dict[str, Union[str, int]] = {'limit': limit, 'offset': offset}
         if search:
             params['search'] = search
 

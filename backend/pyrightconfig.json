@@ -1,0 +1,12 @@
+{
+  "venv": "venv",
+  "venvPath": ".",
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false,
+  "pythonPlatform": "Darwin",
+  "extraPaths": [
+    "./venv/lib/python3.11/site-packages"
+  ]
+} 

@@ -223,7 +223,7 @@ async def get_company_info(
         if db_info:
             for key, value in company_data.items():
                 setattr(db_info, key, value)
-            db_info.updated_at = datetime.utcnow()
+            db_info.updated_at = datetime.utcnow()  # type: ignore[reportGeneralTypeIssues]
         else:
             db_info = CompanyInfo(**company_data)
             db.add(db_info)
@@ -315,7 +315,7 @@ async def get_symbol_dividends(
     - **429**: MarketStack API rate limit exceeded
     """
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=days)
+    start_date = end_date - timedelta(days=days or 365)  # Default to 365 if None
     
     async with MarketDataService() as market_service:
         data = await market_service.get_dividends(symbol, start_date, end_date)
@@ -377,7 +377,7 @@ async def get_symbol_splits(
     - **429**: MarketStack API rate limit exceeded
     """
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=days)
+    start_date = end_date - timedelta(days=days or 365)  # Default to 365 if None
     
     async with MarketDataService() as market_service:
         data = await market_service.get_splits(symbol, start_date, end_date)
@@ -516,4 +516,22 @@ async def search_symbols(
     - **429**: MarketStack API rate limit exceeded
     """
     async with StockService(db) as stock_service:
-        return await stock_service.search_symbols(query, limit) 
+        return await stock_service.search_symbols(query, limit or 10)  # Default to 10 if None
+
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=days or 365)  # Default to 365 if None
+    
+    async with MarketDataService() as market_service:
+        data = await market_service.get_dividends(symbol, start_date, end_date)
+        if not data:
+            raise HTTPException(status_code=404, detail="Dividend data not found")
+        return data
+
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=days or 365)  # Default to 365 if None
+    
+    async with MarketDataService() as market_service:
+        data = await market_service.get_splits(symbol, start_date, end_date)
+        if not data:
+            raise HTTPException(status_code=404, detail="Split data not found")
+        return data 

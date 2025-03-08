@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
+from sqlalchemy import select, and_
 from datetime import datetime, timedelta
 from xml.etree.ElementTree import Element, SubElement, tostring
 import hashlib
@@ -82,10 +83,11 @@ async def get_rss_feed(
             headers={"Content-Disposition": "attachment; filename=stocksight_news.xml"}
         )
     
-    # Get tracked companies
-    tracked_companies = db.query(TrackedCompany.company_symbol).filter(
-        TrackedCompany.user_id == int(user_id)
-    ).all()
+    # Get tracked companies using select
+    stmt = select(TrackedCompany.company_symbol).where(
+        TrackedCompany.user_id == int(user_id)  # type: ignore[reportGeneralTypeIssues]
+    )
+    tracked_companies = db.execute(stmt).scalars().all()
     
     if not tracked_companies:
         raise HTTPException(
@@ -93,18 +95,23 @@ async def get_rss_feed(
             detail="No tracked companies found"
         )
     
-    symbols = [company[0] for company in tracked_companies]
+    symbols = [company for company in tracked_companies]
     cutoff_date = datetime.utcnow() - timedelta(days=days)
     
-    # Get news articles for tracked companies
-    articles = db.query(NewsArticle)\
-        .join(NewsArticle.mentions)\
-        .filter(
-            NewsCompanyMention.company_symbol.in_(symbols),
-            NewsArticle.published_at >= cutoff_date
-        )\
-        .order_by(NewsArticle.published_at.desc())\
-        .all()
+    # Get news articles for tracked companies using select
+    articles_stmt = (
+        select(NewsArticle)
+        .join(NewsCompanyMention, NewsArticle.id == NewsCompanyMention.article_id)  # type: ignore[reportGeneralTypeIssues]
+        .where(
+            and_(
+                NewsCompanyMention.company_symbol.in_(symbols),  # type: ignore[reportGeneralTypeIssues]
+                NewsArticle.published_at >= cutoff_date  # type: ignore[reportGeneralTypeIssues]
+            )
+        )
+        .order_by(NewsArticle.published_at.desc())  # type: ignore[reportGeneralTypeIssues]
+    )
+    
+    articles = db.execute(articles_stmt).scalars().all()
     
     # Generate RSS XML
     rss = Element("rss", version="2.0")
@@ -124,12 +131,13 @@ async def get_rss_feed(
     # Add news items
     for article in articles:
         item = SubElement(channel, "item")
-        SubElement(item, "title").text = article.title
-        SubElement(item, "link").text = article.url
+        SubElement(item, "title").text = str(getattr(article, 'title', ''))
+        SubElement(item, "link").text = str(getattr(article, 'url', ''))
         
         # Add content if available
-        if article.content:
-            SubElement(item, "description").text = article.content
+        content = getattr(article, 'content', None)
+        if content:
+            SubElement(item, "description").text = str(content)
             
         # Add sentiment if available
         if article.sentiment_score is not None:
@@ -141,8 +149,12 @@ async def get_rss_feed(
         SubElement(item, "pubDate").text = pub_date
         
         # Add source and company symbols
-        SubElement(item, "source").text = article.source
-        mentions = [mention.company_symbol for mention in article.mentions]
+        SubElement(item, "source").text = str(getattr(article, 'source', ''))
+        # Get company mentions through the relationship
+        company_mentions = db.query(NewsCompanyMention).filter(
+            NewsCompanyMention.article_id == article.id  # type: ignore[reportGeneralTypeIssues]
+        ).all()
+        mentions = [str(getattr(mention, 'company_symbol', '')) for mention in company_mentions]
         SubElement(item, "companies").text = ", ".join(mentions)
     
     # Convert to XML string

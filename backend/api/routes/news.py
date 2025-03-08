@@ -37,7 +37,7 @@ async def list_news(
     Returns:
     - List of news articles with sentiment analysis
     """
-    return await NewsService(db).list_news(days, company_symbol, min_sentiment)
+    return await NewsService(db).list_news(days=days, company_symbol=company_symbol, min_sentiment=min_sentiment)
 
 @router.get("/sentiment-trends", response_model=List[dict])
 async def get_sentiment_trends(
@@ -58,7 +58,7 @@ async def get_sentiment_trends(
         - Sentiment volatility
         - Article volume
     """
-    return await NewsService(db).get_sentiment_trends(company_symbol, days)
+    return await NewsService(db).get_sentiment_trends(company_symbol=company_symbol, days=days)
 
 @router.get("/company-mentions", response_model=List[NewsCompanyMentionResponse])
 async def get_company_mentions(
@@ -76,7 +76,7 @@ async def get_company_mentions(
     Returns:
     - List of news mentions with context
     """
-    return await NewsService(db).get_company_mentions(company_symbol, days)
+    return await NewsService(db).get_company_mentions(company_symbol=company_symbol, days=days)
 
 @router.get("/impact-analysis", response_model=List[NewsImpactAnalysisResponse])
 async def analyze_news_impact(
@@ -97,7 +97,7 @@ async def analyze_news_impact(
         - Volume changes
         - Sentiment correlation
     """
-    return await NewsService(db).analyze_news_impact(company_symbol, days)
+    return await NewsService(db).analyze_news_impact(company_symbol=company_symbol, days=days)
 
 @router.post("/", response_model=NewsArticleResponse)
 async def create_news_article(
@@ -113,7 +113,7 @@ async def create_news_article(
     Returns:
     - Created article with sentiment analysis
     """
-    return await NewsService(db).create_article(article)
+    return await NewsService(db).create_article(article=article)
 
 @router.get("/topics")
 async def analyze_news_topics(
@@ -134,7 +134,7 @@ async def analyze_news_topics(
         - Topic sentiment
         - Related companies
     """
-    return await NewsService(db).analyze_topics(days, company_symbol)
+    return await NewsService(db).analyze_topics(days=days, company_symbol=company_symbol)
 
 @router.get("/sentiment-comparison")
 async def compare_company_sentiment(
@@ -155,4 +155,4 @@ async def compare_company_sentiment(
         - Sentiment trends
         - News volume comparison
     """
-    return await NewsService(db).compare_sentiment(symbols, days) 
+    return await NewsService(db).compare_sentiment(symbols=symbols, days=days) 

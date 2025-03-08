@@ -1,10 +1,14 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, desc
+from sqlalchemy import func, and_, desc, case, extract, select, exists
+from sqlalchemy.ext.hybrid import hybrid_property
 from datetime import datetime, timedelta
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Any, cast, Union, TypeVar
 import numpy as np
+import numpy.typing as npt
 from scipy import stats
 import pandas as pd
+from pandas.core.series import Series
+from pandas.core.frame import DataFrame
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
@@ -13,6 +17,9 @@ from models.ipo import IPOListing, IPOStatus, IPOFinancials
 from models.stock import StockPrice
 from models.competitor import Competitor, CompetitorFinancials
 from services.cache import cache_result
+
+# Type variables for pandas/numpy operations
+PandasSeriesType = TypeVar('PandasSeriesType', bound=pd.Series)
 
 class MarketAnalysis:
     def __init__(self, db: Session):
@@ -95,9 +102,9 @@ class MarketAnalysis:
                 # Prophet model
                 from prophet import Prophet
                 prophet_model = Prophet(
-                    daily_seasonality=True,
-                    weekly_seasonality=True,
-                    yearly_seasonality=True
+                    daily_seasonality="auto",    # String literal
+                    weekly_seasonality="auto",   # String literal
+                    yearly_seasonality="auto"    # String literal
                 )
                 prophet_model.fit(df)
                 
@@ -157,7 +164,7 @@ class MarketAnalysis:
     @cache_result("volatility", expire=300)  # Cache for 5 minutes
     async def analyze_volatility(
         self,
-        symbols: List[str],  # Changed to accept multiple symbols
+        symbols: List[str],
         window_days: int = 30
     ) -> Dict:
         """Analyze stock price volatility for multiple symbols efficiently."""
@@ -190,12 +197,15 @@ class MarketAnalysis:
                 continue
 
             df = pd.DataFrame(symbol_prices)
-            price_values = df['price'].values
-            returns = np.diff(price_values) / price_values[:-1]
+            # Ensure we have numeric data
+            price_series = cast(pd.Series, pd.to_numeric(df['price'], errors='coerce'))
+            # Convert to numpy array with explicit dtype
+            price_values: npt.NDArray[np.float64] = np.asarray(price_series, dtype=np.float64)
+            returns: npt.NDArray[np.float64] = np.diff(price_values) / price_values[:-1]
 
             results[symbol] = {
                 "volatility": float(np.std(returns) * np.sqrt(252)),  # Annualized
-                "max_drawdown": float(min(returns)) if returns.size > 0 else 0,
+                "max_drawdown": float(np.min(returns)) if returns.size > 0 else 0,
                 "sharpe_ratio": float(np.mean(returns) / np.std(returns)) if returns.size > 0 else 0,
                 "period_days": window_days
             }
@@ -225,11 +235,15 @@ class MarketAnalysis:
         if total_ipos == 0:
             return {"error": "No IPO data found for the specified criteria"}
 
-        # Get all relevant symbols
-        completed_symbols = [
-            ipo.symbol for ipo in ipos 
-            if ipo.status == IPOStatus.COMPLETED and ipo.symbol
-        ]
+        # Get completed symbols using proper SQLAlchemy expressions
+        completed_symbols = []
+        for ipo in ipos:
+            is_completed = self.db.scalar(
+                select(exists().where(ipo.status == IPOStatus.COMPLETED))
+            )
+            symbol = self.db.scalar(select(ipo.symbol))
+            if is_completed and symbol:
+                completed_symbols.append(symbol)
 
         # Batch fetch all relevant stock prices
         if completed_symbols:
@@ -269,20 +283,20 @@ class MarketAnalysis:
             current_price_lookup = {}
 
         # Calculate metrics
-        completed = sum(1 for ipo in ipos if ipo.status == IPOStatus.COMPLETED)
-        withdrawn = sum(1 for ipo in ipos if ipo.status == IPOStatus.WITHDRAWN)
+        completed = sum(1 for ipo in ipos if self.db.scalar(select(True).where(ipo.status == IPOStatus.COMPLETED)))
+        withdrawn = sum(1 for ipo in ipos if self.db.scalar(select(True).where(ipo.status == IPOStatus.WITHDRAWN)))
         
         # Calculate price performance
         price_performance = []
         for ipo in ipos:
-            if (ipo.status == IPOStatus.COMPLETED and 
+            if (self.db.scalar(select(True).where(ipo.status == IPOStatus.COMPLETED)) and 
                 ipo.symbol in price_data and 
                 ipo.symbol in current_price_lookup):
                 
                 first_price = price_data[ipo.symbol]['first_day_price']
                 current_price = current_price_lookup[ipo.symbol]
                 
-                if first_price and current_price:
+                if first_price is not None and current_price is not None:
                     performance = (current_price - first_price) / first_price
                     price_performance.append(performance)
 
@@ -346,12 +360,14 @@ class MarketAnalysis:
         # Collect pricing data
         pricing_data = []
         for ipo in ipos:
-            if ipo.price_range_low and ipo.price_range_high:
-                mid_price = (ipo.price_range_low + ipo.price_range_high) / 2
+            price_range_low = self.db.scalar(select(ipo.price_range_low))
+            price_range_high = self.db.scalar(select(ipo.price_range_high))
+            if price_range_low is not None and price_range_high is not None:
+                mid_price = (price_range_low + price_range_high) / 2
                 pricing_data.append({
-                    "date": ipo.filing_date,
+                    "date": self.db.scalar(select(ipo.filing_date)),
                     "mid_price": mid_price,
-                    "valuation": ipo.initial_valuation
+                    "valuation": self.db.scalar(select(ipo.initial_valuation))
                 })
 
         df = pd.DataFrame(pricing_data)
@@ -373,9 +389,12 @@ class MarketAnalysis:
         
         if 'error' not in result:
             # Add regression analysis
-            dates_numeric = pd.to_numeric(pd.to_datetime(result['dates']))
-            X = dates_numeric.values.reshape(-1, 1)
-            y = result['price_trend']
+            dates_series = pd.to_datetime(result['dates'])
+            numeric_dates = cast(pd.Series, pd.to_numeric(dates_series))
+            # Convert to numpy array and reshape
+            numeric_array: npt.NDArray[np.float64] = np.asarray(numeric_dates, dtype=np.float64)
+            X: npt.NDArray[np.float64] = numeric_array.reshape(-1, 1)
+            y: npt.NDArray[np.float64] = np.array(result['price_trend'], dtype=np.float64)
             
             model = LinearRegression()
             model.fit(X, y)
@@ -423,9 +442,9 @@ class MarketAnalysis:
             .filter(Competitor.therapeutic_area == ipo.therapeutic_area)\
             .all()
 
-        ipo_date = ipo.expected_date or ipo.filing_date
-        start_date = ipo_date - timedelta(days=days_before)
-        end_date = ipo_date + timedelta(days=days_after)
+        ipo_date = self.db.scalar(select(func.coalesce(ipo.expected_date, ipo.filing_date)))
+        start_date = self.db.scalar(select(func.date_sub(ipo_date, days_before)))
+        end_date = self.db.scalar(select(func.date_add(ipo_date, days_after)))
 
         # Batch fetch all relevant stock prices
         all_symbols = [ipo_symbol] + [comp.symbol for comp in competitors]
@@ -468,28 +487,37 @@ class MarketAnalysis:
                 # Calculate correlation only for overlapping dates
                 overlap_idx = ipo_returns.index.intersection(comp_returns.index)
                 if len(overlap_idx) > 1:  # Need at least 2 points for correlation
-                    correlation = ipo_returns[overlap_idx].corr(comp_returns[overlap_idx])
+                    # Convert to list first to avoid type issues
+                    ipo_list = ipo_returns[overlap_idx].tolist()
+                    comp_list = comp_returns[overlap_idx].tolist()
+                    ipo_values = np.array(ipo_list, dtype=np.float64)
+                    comp_values = np.array(comp_list, dtype=np.float64)
+                    correlation = float(np.corrcoef(ipo_values, comp_values)[0, 1])
                     correlations.append(correlation)
 
                     # Calculate pre/post IPO metrics
-                    pre_ipo = comp_df[comp_df.index < ipo_date]['price'].mean()
-                    post_ipo = comp_df[comp_df.index > ipo_date]['price'].mean()
-                    price_change = (post_ipo - pre_ipo) / pre_ipo if pre_ipo else None
+                    pre_ipo_mask = comp_df.index < ipo_date
+                    post_ipo_mask = comp_df.index > ipo_date
+                    pre_ipo_data = cast(pd.Series, comp_df[pre_ipo_mask]['price'])
+                    post_ipo_data = cast(pd.Series, comp_df[post_ipo_mask]['price'])
+                    pre_ipo = float(pre_ipo_data.mean()) if not pre_ipo_data.empty else 0
+                    post_ipo = float(post_ipo_data.mean()) if not post_ipo_data.empty else 0
+                    price_change = (post_ipo - pre_ipo) / pre_ipo if pre_ipo > 0 else None
 
                     impact_data.append({
                         "competitor": competitor.symbol,
                         "correlation": correlation,
-                        "price_change": price_change,
-                        "pre_ipo_avg": float(pre_ipo) if pre_ipo else None,
-                        "post_ipo_avg": float(post_ipo) if post_ipo else None
+                        "price_change": float(price_change) if price_change is not None else None,
+                        "pre_ipo_avg": pre_ipo,
+                        "post_ipo_avg": post_ipo
                     })
 
         if not impact_data:
             return {"error": "Insufficient data for market impact analysis"}
 
         # Calculate statistical significance
-        correlations = np.array([d["correlation"] for d in impact_data])
-        t_stat, p_value = stats.ttest_1samp(correlations, 0)
+        correlations_array: npt.NDArray[np.float64] = np.array(correlations, dtype=np.float64)
+        t_stat, p_value = stats.ttest_1samp(correlations_array, 0)
 
         result = {
             "ipo_symbol": ipo_symbol,

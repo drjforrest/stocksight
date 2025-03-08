@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
+from typing import Optional
 from services.pdf_generator import generate_pdf_report
 from services.email_service import send_report
 
@@ -7,7 +8,7 @@ router = APIRouter()
 
 class ReportRequest(BaseModel):
     selected_charts: list
-    email: str = None  # Optional field for emailing
+    email: Optional[str] = None  # Optional field for emailing
 
 @router.post("/generate-report")
 async def generate_report(request: ReportRequest, background_tasks: BackgroundTasks):

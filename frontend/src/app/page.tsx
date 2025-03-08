@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { api } from '@/lib/api';
 import Dashboard from '../components/Dashboard';
 import AdminPanel from '../components/AdminPanel';
 
@@ -12,7 +12,7 @@ export default function Page() {
   useEffect(() => {
     const fetchFeatureFlags = async () => {
       try {
-        const response = await axios.get('/api/feature-flags');
+        const response = await api.get('/feature-flags');
         setFeatureFlags(response.data);
         setError(null);
       } catch (err) {

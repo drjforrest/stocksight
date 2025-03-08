@@ -1,6 +1,7 @@
 import os
 import sys
 from logging.config import fileConfig
+from typing import Dict, Any, cast
 
 from sqlalchemy import engine_from_config, pool, text
 from alembic import context
@@ -82,10 +83,16 @@ def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
     # Add the search_path setting to the connection URL
     ini_section = config.get_section(config.config_ini_section)
-    ini_section['sqlalchemy.url'] = f"{ini_section['sqlalchemy.url']}?options=-csearch_path%3D{SCHEMA}"
+    if ini_section is None:
+        ini_section = {}
+    
+    # Get the base URL from config or environment
+    base_url = ini_section.get('sqlalchemy.url', DATABASE_URL)
+    if base_url:
+        ini_section['sqlalchemy.url'] = f"{base_url}?options=-csearch_path%3D{SCHEMA}"
 
     connectable = engine_from_config(
-        ini_section,
+        cast(Dict[str, Any], ini_section),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

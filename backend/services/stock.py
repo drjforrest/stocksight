@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 from datetime import datetime
 from typing import List, Optional
+from sqlalchemy.sql import select
 
 from models.stock import StockPrice, CompanyInfo, DividendHistory, StockSplit, Exchange
 from api.schemas.stock import (
@@ -172,7 +173,8 @@ class StockService:
         end_date: Optional[datetime] = None
     ) -> List[EODData]:
         """Get end-of-day data for a symbol."""
-        return await self.market_data.get_eod_data(symbol, start_date, end_date)
+        data = await self.market_data.get_eod_data(symbol, start_date, end_date)
+        return [EODData(**item) for item in data]
 
     async def get_intraday_data(
         self,
@@ -180,7 +182,8 @@ class StockService:
         interval: str = "1min"
     ) -> List[IntradayData]:
         """Get intraday data for a symbol."""
-        return await self.market_data.get_intraday_data(symbol, interval)
+        data = await self.market_data.get_intraday_data(symbol, interval)
+        return [IntradayData(**item) for item in data]
 
     async def search_symbols(
         self,
@@ -199,14 +202,15 @@ class StockService:
         if db_results:
             return [
                 SymbolSearchResult(
-                    symbol=r.symbol,
-                    name=r.name,
-                    exchange=r.exchange,
+                    symbol=str(self.db.scalar(select(r.symbol))),
+                    name=str(self.db.scalar(select(r.name))),
+                    exchange=str(self.db.scalar(select(r.exchange))),
                     type="stock",
                     currency="USD",  # You might want to get this from the exchange info
-                    country=r.country
+                    country=str(self.db.scalar(select(r.country))) if self.db.scalar(select(r.country)) else None
                 ) for r in db_results
             ]
 
         # If no local results, search via MarketStack API
-        return await self.market_data.search_symbols(query, limit) 
+        api_results = await self.market_data.search_symbols(query, limit)
+        return [SymbolSearchResult(**item) for item in api_results] 

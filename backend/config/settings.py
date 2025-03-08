@@ -9,12 +9,12 @@ BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 class Settings(BaseSettings):
     # API Settings
-    marketstack_api_key: str
-    serper_api_key: str  # Serper.dev API key for fetching news articles
+    marketstack_api_key: str = ""  # type: ignore[reportGeneralTypeIssues]
+    serper_api_key: str = ""  # type: ignore[reportGeneralTypeIssues]
     api_rate_limit: int = 5  # requests per second
     
     # Database Settings
-    database_url: str
+    database_url: str = ""  # type: ignore[reportGeneralTypeIssues]
     db: Optional[Session] = None
     
     # Redis Settings
@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     
     class Config:
         env_file = os.path.join(BACKEND_DIR, ".env")
+        env_required = ["marketstack_api_key", "serper_api_key", "database_url"]
 
 @lru_cache()
 def get_settings() -> Settings:

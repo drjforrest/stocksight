@@ -1,7 +1,6 @@
-import axios from 'axios';
 import { api } from "./api";
+import axios from 'axios';
 
-// Base API URL
 const API_BASE = '/api';
 
 // Types
@@ -75,17 +74,17 @@ export interface TrackedCompany {
 
 // API Functions
 export const getStockPrices = async (symbol: string) => {
-  const response = await axios.get(`${API_BASE}/stocks/${symbol}/prices`);
+  const response = await api.get(`/stocks/prices/${symbol}`);
   return response.data;
 };
 
 export const getIPOListings = async () => {
-  const response = await axios.get(`${API_BASE}/ipos`);
+  const response = await api.get('/ipos');
   return response.data;
 };
 
 export const getIPOInsights = async (timeframe: string, therapeuticArea?: string) => {
-  const response = await axios.get(`${API_BASE}/ipos/insights`, {
+  const response = await api.get('/market/ipo-insights', {
     params: {
       timeframe,
       therapeutic_area: therapeuticArea
@@ -95,19 +94,21 @@ export const getIPOInsights = async (timeframe: string, therapeuticArea?: string
 };
 
 export const getFeatureFlags = async () => {
-  const response = await axios.get(`${API_BASE}/feature-flags`);
+  const response = await api.get('/feature-flags');
   return response.data;
 };
 
 export const getMarketTrends = async (index: string, timeframe: string) => {
-  const response = await axios.get(`${API_BASE}/market/trends/${index}`, {
-    params: { timeframe }
+  const response = await api.get('/market/trends', {
+    params: { index, timeframe }
   });
   return response.data;
 };
 
 export const getMarketMetrics = async (index: string) => {
-  const response = await axios.get(`${API_BASE}/market/metrics/${index}`);
+  const response = await api.get('/market/metrics', {
+    params: { index }
+  });
   return response.data;
 };
 

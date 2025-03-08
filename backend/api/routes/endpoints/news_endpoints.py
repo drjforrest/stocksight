@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import and_, desc, Column, select, inspect
+from sqlalchemy.sql.expression import true
 from typing import List
 from datetime import datetime, timedelta
 
 from config.database import get_db
 from services.news import NewsFetcher, NewsImpactService
 from models.news import (
-    NewsArticle, NewsArticleCreate, NewsCompanyMention,
+    NewsArticle as NewsArticleModel,  # Rename to avoid conflict with Pydantic model
+    NewsArticleCreate, NewsCompanyMention,
     NewsCompanyMentionCreate, NewsImpactAnalysis
 )
 
@@ -48,12 +51,13 @@ async def get_latest_news(
         
         # Create company mentions
         for article in stored_articles:
-            mention = NewsCompanyMention(
-                article_id=article.id,
+            mention = NewsCompanyMentionCreate(
+                article_id=inspect(article).identity[0],
                 company_symbol=symbol,
                 relevance_score=1.0  # Default full relevance for direct symbol searches
             )
-            db.add(mention)
+            db_mention = NewsCompanyMention(**mention.dict())
+            db.add(db_mention)
         
         db.commit()
         
@@ -95,21 +99,21 @@ def get_company_articles(
 ):
     """
     Get all news articles for a company.
-    
-    Args:
-        symbol: Company stock symbol
-        days: Number of days to look back (default: 7)
-        db: Database session
     """
     cutoff_date = datetime.utcnow() - timedelta(days=days)
     
-    articles = db.query(NewsArticle)\
-        .join(NewsArticle.mentions)\
-        .filter(
-            NewsCompanyMention.company_symbol == symbol,
-            NewsArticle.published_at >= cutoff_date
-        )\
-        .order_by(NewsArticle.published_at.desc())\
-        .all()
+    # Build the query using SQLAlchemy's expression language
+    # type: ignore[reportGeneralTypeIssues]
+    stmt = (
+        select(NewsArticleModel)
+        .join(NewsCompanyMention)
+        .where(
+            NewsCompanyMention.company_symbol == symbol,  # type: ignore[reportGeneralTypeIssues]
+            NewsArticleModel.published_at >= cutoff_date  # type: ignore[reportGeneralTypeIssues]
+        )
+        .order_by(NewsArticleModel.published_at.desc())  # type: ignore[reportGeneralTypeIssues]
+    )
     
+    # Execute the query
+    articles = db.execute(stmt).scalars().all()
     return articles 

@@ -92,7 +92,7 @@ class NewsArticleBase(BaseModel):
 class NewsArticleCreate(NewsArticleBase):
     pass
 
-class NewsArticle(NewsArticleBase):
+class NewsArticleResponse(NewsArticleBase):
     id: int
 
     class Config:
@@ -106,7 +106,7 @@ class NewsCompanyMentionBase(BaseModel):
 class NewsCompanyMentionCreate(NewsCompanyMentionBase):
     pass
 
-class NewsCompanyMention(NewsCompanyMentionBase):
+class NewsCompanyMentionResponse(NewsCompanyMentionBase):
     id: int
 
     class Config:
@@ -121,7 +121,7 @@ class NewsImpactAnalysisBase(BaseModel):
 class NewsImpactAnalysisCreate(NewsImpactAnalysisBase):
     pass
 
-class NewsImpactAnalysis(NewsImpactAnalysisBase):
+class NewsImpactAnalysisResponse(NewsImpactAnalysisBase):
     id: int
 
     class Config:

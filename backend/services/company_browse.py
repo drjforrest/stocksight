@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 import httpx
 from datetime import datetime
 from .cache import CacheService, cache_result, SEARCH_RESULTS_EXPIRY
@@ -181,13 +181,13 @@ class CompanyBrowseService:
     ) -> Dict:
         """Get FDA data for filtering companies."""
         try:
-            params = {
+            params: Dict[str, Any] = {
                 "limit": 1000
             }
             
             # Add therapeutic area filter
             if therapeutic_area:
-                params["search"] = f"products.therapeutic_area:\"{therapeutic_area}\""
+                params["search"] = f'products.therapeutic_area:"{therapeutic_area}"'
             
             async with httpx.AsyncClient() as client:
                 response = await client.get(

@@ -25,7 +25,7 @@ class TrackedCompanyBase(BaseModel):
 class TrackedCompanyCreate(TrackedCompanyBase):
     user_id: int
 
-class TrackedCompany(TrackedCompanyBase):
+class TrackedCompanyResponse(TrackedCompanyBase):
     id: int
     user_id: int
     added_at: datetime

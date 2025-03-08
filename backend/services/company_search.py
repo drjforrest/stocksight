@@ -5,11 +5,11 @@ import os
 from datetime import datetime
 
 class CompanySearchResult:
-    def __init__(self, symbol: str, name: str, competitor_score: float, description: str = None):
+    def __init__(self, symbol: str, name: str, competitor_score: float, description: Optional[str] = None):
         self.symbol = symbol
         self.name = name
         self.competitor_score = competitor_score
-        self.description = description
+        self.description = description or ""  # Convert None to empty string
 
 class CompanySearchService:
     def __init__(self):

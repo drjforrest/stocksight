@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 import os
 import httpx
 import nltk
@@ -10,6 +10,7 @@ from fastapi import HTTPException
 from .cache import CacheService, cache_result
 import logging
 from config.settings import get_settings
+from sqlalchemy import select
 
 from models.news import NewsArticle, NewsCompanyMention, NewsImpactAnalysis
 from api.schemas.news import NewsArticleCreate, NewsCompanyMentionCreate, NewsImpactAnalysisCreate
@@ -100,10 +101,11 @@ class NewsImpactService:
         Returns:
             Compound sentiment score between -1 and 1, or None if no content
         """
-        if not article.content:
+        content = self.db.scalar(select(article.content))
+        if content is None:
             return None
         
-        sentiment = self.sia.polarity_scores(article.content)
+        sentiment = self.sia.polarity_scores(content)
         return sentiment["compound"]
 
     def calculate_news_impact(self, company_symbol: str, days: int = 7) -> Optional[NewsImpactAnalysis]:
@@ -157,11 +159,16 @@ class NewsImpactService:
 class NewsService:
     """Service for fetching financial news articles using Serper.dev Google Search API."""
     
-    def __init__(self):
-        """Initialize NewsService with API configuration."""
+    def __init__(self, db: Session):
+        """Initialize NewsService with API configuration and database session.
+        
+        Args:
+            db: Database session
+        """
         self.api_key = settings.serper_api_key
         self.base_url = "https://google.serper.dev/news"
         self.cache = CacheService()
+        self.db = db
 
     def _validate_dates(self, from_date: str, to_date: str) -> tuple[datetime, datetime]:
         """Validate and parse date strings.
@@ -201,7 +208,7 @@ class NewsService:
         to_date: str,
         language: str = "en",
         page_size: int = 100
-    ) -> List[Dict[str, any]]:
+    ) -> List[Dict[str, Any]]:
         """Fetch financial news articles with caching and error handling.
         
         Args:
@@ -212,16 +219,7 @@ class NewsService:
             page_size: Number of articles to return (default: 100, max: 100)
             
         Returns:
-            List[Dict[str, any]]: List of news articles, each containing:
-                - title: Article title
-                - link: URL to full article
-                - snippet: Article snippet/description
-                - source: Source name
-                - date: Publication date
-                - imageUrl: URL to article image (if available)
-                
-        Raises:
-            HTTPException: On API errors or invalid parameters
+            List[Dict[str, Any]]: List of news articles
         """
         # Validate dates
         self._validate_dates(from_date, to_date)
@@ -385,7 +383,7 @@ class NewsService:
         to_date: str,
         language: str = "en",
         page_size: int = 100
-    ) -> List[Dict[str, any]]:
+    ) -> List[Dict[str, Any]]:
         """Fetch industry-wide news articles.
         
         Args:
@@ -396,7 +394,7 @@ class NewsService:
             page_size: Number of articles to return (default: 100)
             
         Returns:
-            List[Dict[str, any]]: Filtered list of relevant industry news
+            List[Dict[str, Any]]: Filtered list of relevant industry news
         """
         # Create an industry-focused search query
         search_terms = [
@@ -441,7 +439,7 @@ class NewsService:
         to_date: str,
         language: str = "en",
         page_size: int = 100
-    ) -> List[Dict[str, any]]:
+    ) -> List[Dict[str, Any]]:
         """Fetch company-specific news articles.
         
         Args:
@@ -453,7 +451,7 @@ class NewsService:
             page_size: Number of articles to return (default: 100)
             
         Returns:
-            List[Dict[str, any]]: Filtered list of relevant company news
+            List[Dict[str, Any]]: Filtered list of relevant company news
         """
         # Create a company-focused search query
         search_terms = [
@@ -497,12 +495,12 @@ class NewsService:
     @cache_result(prefix="news", expire=3600)  # Cache for 1 hour
     async def fetch_competitor_news(
         self,
-        companies: List[Dict[str, str]],  # List of {name, symbol} dicts
+        companies: List[Dict[str, str]],
         from_date: str,
         to_date: str,
         language: str = "en",
         page_size: int = 100
-    ) -> Dict[str, List[Dict[str, any]]]:
+    ) -> Dict[str, List[Dict[str, Any]]]:
         """Fetch news for multiple competing companies.
         
         Args:
@@ -513,7 +511,7 @@ class NewsService:
             page_size: Number of articles per company (default: 100)
             
         Returns:
-            Dict[str, List[Dict[str, any]]]: Dictionary of company symbols to their news articles
+            Dict[str, List[Dict[str, Any]]]: Dictionary of company symbols to their news articles
         """
         results = {}
         
@@ -661,9 +659,10 @@ class NewsService:
         Returns:
             Optional[float]: Sentiment score between -1 and 1, or None if no content
         """
-        if not article.content:
+        content = self.db.scalar(select(article.content))
+        if content is None:
             return None
             
         sia = SentimentIntensityAnalyzer()
-        sentiment = sia.polarity_scores(article.content)
+        sentiment = sia.polarity_scores(content)
         return sentiment["compound"] 

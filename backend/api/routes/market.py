@@ -1,9 +1,11 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
+from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, timedelta
 from services.market_data import MarketDataService
 from api.schemas.market import MarketTrends, MarketMetrics, IPOInsights
 from api.auth import get_current_user
+from config.database import get_db
 
 router = APIRouter(
     prefix="/market",
@@ -79,7 +81,8 @@ async def get_market_metrics(
 
 @router.get("/ipo-insights", response_model=IPOInsights)
 async def get_ipo_insights(
-    timeframe: str = Query("90d", description="Analysis timeframe (30d, 90d, 180d, 1y)")
+    timeframe: str = Query("90d", description="Analysis timeframe (30d, 90d, 180d, 1y)"),
+    db: Session = Depends(get_db)
 ):
     """Get IPO insights and analysis for recent and upcoming IPOs."""
     async with MarketDataService() as market_service:
@@ -95,7 +98,7 @@ async def get_ipo_insights(
         start_date = end_date - timedelta(days=days)
         
         # Get IPO data from market service
-        ipo_data = await market_service.get_ipo_data(start_date, end_date)
+        ipo_data = await market_service.get_ipo_data(start_date, end_date, db)
         
         if not ipo_data:
             raise HTTPException(status_code=404, detail="No IPO data found for the specified timeframe")

@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from "react";
-import axios, { AxiosError } from "axios";
+import { api } from '@/lib/api';
+import { AxiosError } from "axios";
 import { FeatureFlags } from "../types/competitor";
 
 export default function AdminPanel() {
@@ -11,7 +12,7 @@ export default function AdminPanel() {
   useEffect(() => {
     async function fetchFeatureStatus() {
       try {
-        const response = await axios.get<FeatureFlags>("/api/feature-flags");
+        const response = await api.get<FeatureFlags>('/feature-flags');
         setEnabled(response.data.competitorScoring);
         setError(null);
       } catch (error) {
@@ -28,7 +29,7 @@ export default function AdminPanel() {
 
   const toggleFeature = async () => {
     try {
-      await axios.post<FeatureFlags>("/api/feature-flags", { competitorScoring: !enabled });
+      await api.post<FeatureFlags>('/feature-flags', { competitorScoring: !enabled });
       setEnabled(!enabled);
       setError(null);
     } catch (error) {

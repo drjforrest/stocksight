@@ -6,6 +6,7 @@ This service provides methods to fetch various types of financial market data in
 - Market indices
 - Corporate actions (dividends and splits)
 - Exchange information
+- IPO data
 
 All methods are asynchronous and return structured data from the MarketStack API.
 """
@@ -16,6 +17,9 @@ from typing import Dict, List, Optional, Union, Any
 from dotenv import load_dotenv
 from .marketstack import MarketStackClient
 from config.settings import get_settings
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+from models.ipo import IPOListing, IPOStatus
 
 load_dotenv()
 settings = get_settings()
@@ -257,4 +261,99 @@ class MarketDataService:
             search=query,
             limit=limit
         )
-        return response.get('data', []) 
+        return response.get('data', [])
+
+    async def get_ipo_data(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        db: Optional[Session] = None
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        """Get IPO data for a specified date range.
+        
+        Args:
+            start_date (datetime): Start date for IPO data
+            end_date (datetime): End date for IPO data
+            db (Optional[Session]): Database session for querying IPO data
+            
+        Returns:
+            Dict[str, List[Dict[str, Any]]]: Dictionary containing:
+                - recent: List of recently completed IPOs
+                - upcoming: List of upcoming IPOs
+        """
+        if not db:
+            return {
+                "recent": [],
+                "upcoming": []
+            }
+
+        # Query recent IPOs
+        recent_stmt = (
+            select(IPOListing)
+            .where(
+                IPOListing.status == IPOStatus.COMPLETED,  # type: ignore[reportGeneralTypeIssues]
+                IPOListing.filing_date >= start_date,  # type: ignore[reportGeneralTypeIssues]
+                IPOListing.filing_date <= end_date  # type: ignore[reportGeneralTypeIssues]
+            )
+        )
+        recent_ipos = db.execute(recent_stmt).scalars().all()
+
+        # Query upcoming IPOs
+        upcoming_stmt = (
+            select(IPOListing)
+            .where(
+                IPOListing.status.in_([IPOStatus.FILED, IPOStatus.UPCOMING]),  # type: ignore[reportGeneralTypeIssues]
+                IPOListing.expected_date >= start_date,  # type: ignore[reportGeneralTypeIssues]
+                IPOListing.expected_date <= end_date  # type: ignore[reportGeneralTypeIssues]
+            )
+        )
+        upcoming_ipos = db.execute(upcoming_stmt).scalars().all()
+
+        # Convert to dictionaries
+        recent = [
+            {
+                "company_name": ipo.company_name,
+                "symbol": ipo.symbol,
+                "filing_date": ipo.filing_date,
+                "price_range": (
+                    f"${db.scalar(select(ipo.price_range_low))}-${db.scalar(select(ipo.price_range_high))}"
+                    if db.scalar(select(ipo.price_range_low)) is not None and 
+                       db.scalar(select(ipo.price_range_high)) is not None 
+                    else None
+                ) if db else None,
+                "shares_offered": ipo.shares_offered,
+                "initial_valuation": ipo.initial_valuation,
+                "lead_underwriters": ipo.lead_underwriters,
+                "therapeutic_area": ipo.therapeutic_area,
+                "pipeline_stage": ipo.pipeline_stage,
+                "primary_indication": ipo.primary_indication
+            }
+            for ipo in recent_ipos
+        ]
+
+        upcoming = [
+            {
+                "company_name": ipo.company_name,
+                "symbol": ipo.symbol,
+                "filing_date": ipo.filing_date,
+                "expected_date": ipo.expected_date,
+                "price_range": (
+                    f"${db.scalar(select(ipo.price_range_low))}-${db.scalar(select(ipo.price_range_high))}"
+                    if db.scalar(select(ipo.price_range_low)) is not None and 
+                       db.scalar(select(ipo.price_range_high)) is not None 
+                    else None
+                ) if db else None,
+                "shares_offered": ipo.shares_offered,
+                "initial_valuation": ipo.initial_valuation,
+                "lead_underwriters": ipo.lead_underwriters,
+                "therapeutic_area": ipo.therapeutic_area,
+                "pipeline_stage": ipo.pipeline_stage,
+                "primary_indication": ipo.primary_indication
+            }
+            for ipo in upcoming_ipos
+        ]
+
+        return {
+            "recent": recent,
+            "upcoming": upcoming
+        } 

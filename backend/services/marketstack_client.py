@@ -45,10 +45,9 @@ class MarketStackClient:
         await self.client.aclose()
 
     @rate_limit(calls=5, period=1)  # 5 calls per second
-    async def _make_request(self, endpoint: str, params: Dict[str, Any] = None) -> Dict:
+    async def _make_request(self, endpoint: str, params: Dict[str, Any] = {}) -> Dict[str, Any]:
         """Make a rate-limited API request"""
-        if params is None:
-            params = {}
+        params = params.copy()  # Create a copy to avoid modifying the default dict
         params['access_key'] = self.api_key
 
         try:
@@ -64,7 +63,7 @@ class MarketStackClient:
             logger.error(f"Request error occurred: {e}")
             raise HTTPException(status_code=503, detail="Service temporarily unavailable")
 
-    async def get_real_time_price(self, symbol: str) -> Dict:
+    async def get_real_time_price(self, symbol: str) -> Dict[str, Any]:
         """
         Get real-time stock price data
         
@@ -82,7 +81,7 @@ class MarketStackClient:
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         limit: int = 100
-    ) -> List[Dict]:
+    ) -> Dict[str, Any]:
         """
         Get historical stock data
         
@@ -93,9 +92,9 @@ class MarketStackClient:
             limit: Maximum number of records to return
             
         Returns:
-            List of historical price data points
+            Dictionary containing historical price data including a data array
         """
-        params = {
+        params: Dict[str, Any] = {
             "symbols": symbol,
             "limit": limit
         }
@@ -107,7 +106,7 @@ class MarketStackClient:
 
         return await self._make_request("eod", params)
 
-    async def get_company_info(self, symbol: str) -> Dict:
+    async def get_company_info(self, symbol: str) -> Dict[str, Any]:
         """
         Get company information
         

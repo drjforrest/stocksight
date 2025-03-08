@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 import logging
 from typing import List
 from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.sql import expression
 
 from services.marketstack_client import MarketStackClient
 from config.settings import get_settings
@@ -17,12 +19,25 @@ settings = get_settings()
 
 scheduler = BackgroundScheduler()
 
+def get_db() -> Session:
+    """Get a new database session."""
+    db = SessionLocal()
+    try:
+        return db
+    finally:
+        db.close()
+
 async def update_stock_prices():
     """Update real-time stock prices every 5 minutes"""
+    db = get_db()
     try:
         async with MarketStackClient(settings.marketstack_api_key) as client:
-            # Get all tracked symbols
-            symbols = [stock.symbol for stock in settings.tracked_stocks]
+            # Get all tracked stocks from settings
+            tracked_stocks = settings.tracked_stocks
+            if not isinstance(tracked_stocks, list):
+                tracked_stocks = []
+            
+            symbols = [str(stock) for stock in tracked_stocks]
             
             # Fetch batch price updates
             price_data = await client.batch_real_time_prices(symbols)
@@ -35,20 +50,26 @@ async def update_stock_prices():
                     volume=data['volume'],
                     timestamp=datetime.fromisoformat(data['timestamp'])
                 )
-                # Add to database session
-                settings.db.add(stock_price)
+                db.add(stock_price)
             
-            settings.db.commit()
+            db.commit()
             logger.info(f"Updated prices for {len(symbols)} stocks")
             
     except Exception as e:
         logger.error(f"Error updating stock prices: {e}")
+    finally:
+        db.close()
 
 async def update_company_info():
     """Update company information daily"""
+    db = get_db()
     try:
         async with MarketStackClient(settings.marketstack_api_key) as client:
-            symbols = [comp.symbol for comp in settings.tracked_stocks]
+            tracked_stocks = settings.tracked_stocks
+            if not isinstance(tracked_stocks, list):
+                tracked_stocks = []
+            
+            symbols = [str(stock) for stock in tracked_stocks]
             
             for symbol in symbols:
                 info = await client.get_company_info(symbol)
@@ -60,33 +81,44 @@ async def update_company_info():
                     industry=info['industry'],
                     # Add other relevant fields
                 )
-                settings.db.merge(company)
+                db.merge(company)
             
-            settings.db.commit()
+            db.commit()
             logger.info(f"Updated company info for {len(symbols)} companies")
             
     except Exception as e:
         logger.error(f"Error updating company information: {e}")
+    finally:
+        db.close()
 
 async def update_ipo_status():
     """Update IPO statuses daily"""
+    db = get_db()
     try:
-        # Get upcoming IPOs
-        upcoming_ipos = settings.db.query(IPOListing)\
-            .filter(IPOListing.status == IPOStatus.UPCOMING)\
-            .all()
+        # Get upcoming IPOs using select
+        stmt = select(IPOListing).where(
+            IPOListing.status == str(IPOStatus.UPCOMING)
+        )
+        upcoming_ipos = db.scalars(stmt).all()
             
         for ipo in upcoming_ipos:
-            if ipo.expected_date and ipo.expected_date <= datetime.utcnow():
-                # Check if IPO completed
-                # Update status accordingly
-                ipo.status = IPOStatus.COMPLETED
-                
-        settings.db.commit()
+            # Use select to get the expected_date value
+            expected_date = db.scalar(select(ipo.expected_date))
+            if expected_date is not None and expected_date <= datetime.utcnow():
+                # Update status using update statement
+                db.execute(
+                    IPOListing.__table__.update()
+                    .where(IPOListing.id == ipo.id)
+                    .values(status=str(IPOStatus.COMPLETED))
+                )
+        
+        db.commit()
         logger.info(f"Updated status for {len(upcoming_ipos)} IPOs")
         
     except Exception as e:
         logger.error(f"Error updating IPO statuses: {e}")
+    finally:
+        db.close()
 
 def init_scheduler():
     """Initialize the scheduler with all tasks"""

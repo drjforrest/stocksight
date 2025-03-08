@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import select, and_
 from typing import List
 from datetime import datetime, timedelta
 from fastapi.responses import JSONResponse
@@ -21,13 +22,13 @@ cache = CacheService()
 async def check_refresh_rate_limit(symbol: str) -> bool:
     """Check if we can refresh news for this symbol (limit: once per 12 hours)."""
     cache_key = f"news_refresh:{symbol}"
-    last_refresh = await cache.get(cache_key)
+    last_refresh = await cache.aget(cache_key)
     
     if last_refresh:
         return False
         
     # Set refresh timestamp with 12-hour expiry
-    await cache.set(cache_key, datetime.utcnow().isoformat(), ex=43200)  # 12 hours
+    await cache.aset(cache_key, datetime.utcnow().isoformat(), expire=43200)  # 12 hours
     return True
 
 @router.post("/{user_id}/{symbol}", response_model=TrackedCompany)
@@ -50,11 +51,14 @@ async def add_tracked_company(
     Raises:
         HTTPException: If company is already being tracked
     """
-    # Check if already tracking
-    existing = db.query(TrackedCompany).filter(
-        TrackedCompany.user_id == user_id,
-        TrackedCompany.company_symbol == symbol
-    ).first()
+    # Check if already tracking using select
+    stmt = select(TrackedCompany).where(
+        and_(
+            TrackedCompany.user_id == user_id,  # type: ignore[reportGeneralTypeIssues]
+            TrackedCompany.company_symbol == symbol  # type: ignore[reportGeneralTypeIssues]
+        )
+    )
+    existing = db.execute(stmt).scalar_one_or_none()
     
     if existing:
         raise HTTPException(
@@ -77,7 +81,7 @@ async def add_tracked_company(
     db.add(tracked)
     
     # Fetch initial news
-    news_service = NewsService()
+    news_service = NewsService(db=db)
     try:
         await news_service.fetch_initial_company_news(
             db=db,
@@ -106,10 +110,13 @@ async def remove_tracked_company(
         symbol: Company stock symbol
         db: Database session
     """
-    tracked = db.query(TrackedCompany).filter(
-        TrackedCompany.user_id == user_id,
-        TrackedCompany.company_symbol == symbol
-    ).first()
+    stmt = select(TrackedCompany).where(
+        and_(
+            TrackedCompany.user_id == user_id,  # type: ignore[reportGeneralTypeIssues]
+            TrackedCompany.company_symbol == symbol  # type: ignore[reportGeneralTypeIssues]
+        )
+    )
+    tracked = db.execute(stmt).scalar_one_or_none()
     
     if not tracked:
         raise HTTPException(
@@ -136,11 +143,12 @@ async def get_tracked_companies(
     Returns:
         List of company symbols
     """
-    companies = db.query(TrackedCompany.company_symbol).filter(
-        TrackedCompany.user_id == user_id
-    ).all()
+    stmt = select(TrackedCompany.company_symbol).where(
+        TrackedCompany.user_id == user_id  # type: ignore[reportGeneralTypeIssues]
+    )
+    companies = db.execute(stmt).scalars().all()
     
-    return [company[0] for company in companies]
+    return [company for company in companies]
 
 @router.post("/{user_id}/{symbol}/refresh")
 async def refresh_company_news(
@@ -168,11 +176,14 @@ async def refresh_company_news(
             }
         )
     
-    # Verify company is tracked
-    tracked = db.query(TrackedCompany).filter(
-        TrackedCompany.user_id == user_id,
-        TrackedCompany.company_symbol == symbol
-    ).first()
+    # Verify company is tracked using select
+    stmt = select(TrackedCompany).where(
+        and_(
+            TrackedCompany.user_id == user_id,  # type: ignore[reportGeneralTypeIssues]
+            TrackedCompany.company_symbol == symbol  # type: ignore[reportGeneralTypeIssues]
+        )
+    )
+    tracked = db.execute(stmt).scalar_one_or_none()
     
     if not tracked:
         raise HTTPException(
@@ -190,7 +201,7 @@ async def refresh_company_news(
             )
     
     # Update news
-    news_service = NewsService()
+    news_service = NewsService(db=db)
     try:
         new_articles = await news_service.update_tracked_company_news(
             db=db,
@@ -220,7 +231,7 @@ async def test_company_news(
         symbol: Company symbol (e.g., 'ABCL' for Abcellera)
         db: Database session
     """
-    news_service = NewsService()
+    news_service = NewsService(db=db)
     try:
         # Construct search query based on company profile
         search_terms = [
