@@ -4,8 +4,8 @@ from datetime import datetime
 from .cache import CacheService, cache_result, SEARCH_RESULTS_EXPIRY
 import asyncio
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
-from models.company import CompanyInfo
+from sqlalchemy import or_, select
+from models.stock import CompanyInfo
 from api.schemas.company import CompanyBrowseResponse
 
 class CompanyBrowseService:

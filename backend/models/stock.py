@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Index, Table
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, foreign, remote
 from datetime import datetime
 from config.database import Base
 
@@ -10,14 +10,13 @@ class StockPrice(Base):
     __table_args__ = {'schema': 'stocksight'}
 
     id = Column(Integer, primary_key=True)
-    symbol = Column(String, index=True, nullable=False)
+    symbol = Column(String, ForeignKey('stocksight.company_info.symbol'), index=True, nullable=False)
     price = Column(Float, nullable=False)
     timestamp = Column(DateTime, nullable=False)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
 
     # Relationships
-    company = relationship("CompanyInfo", back_populates="prices", foreign_keys=[symbol],
-                         primaryjoin="StockPrice.symbol == CompanyInfo.symbol")
+    company = relationship("CompanyInfo", back_populates="prices")
 
     def __repr__(self):
         return f"<StockPrice(symbol='{self.symbol}', price={self.price}, timestamp='{self.timestamp}')>"
@@ -42,8 +41,7 @@ class CompanyInfo(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
 
     # Relationships
-    prices = relationship("StockPrice", back_populates="company",
-                        primaryjoin="CompanyInfo.symbol == StockPrice.symbol")
+    prices = relationship("StockPrice", back_populates="company")
     dividends = relationship("DividendHistory", back_populates="company")
     splits = relationship("StockSplit", back_populates="company")
 

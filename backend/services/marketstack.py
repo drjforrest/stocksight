@@ -10,12 +10,14 @@ from config.settings import get_settings
 
 settings = get_settings()
 
-# Initialize Redis for caching API responses
-redis = aioredis.from_url(
-    f"redis://{settings.redis_host}:{settings.redis_port}/{settings.redis_db}",
-    encoding="utf-8",
-    decode_responses=True
-)
+# Initialize Redis for caching API responses if not in development mode
+redis = None
+if os.getenv("ENVIRONMENT") != "development":
+    redis = aioredis.from_url(
+        f"redis://{settings.redis_host}:{settings.redis_port}/{settings.redis_db}",
+        encoding="utf-8",
+        decode_responses=True
+    )
 
 class CacheData(TypedDict):
     data: Dict[str, Any]
@@ -37,7 +39,8 @@ class MarketStackClient:
     async def cleanup(self):
         """Cleanup resources."""
         await self.client.aclose()
-        await redis.close()
+        if redis:
+            await redis.close()
 
     async def __aenter__(self):
         return self
@@ -47,6 +50,8 @@ class MarketStackClient:
 
     async def _get_cached_response(self, key: str) -> Optional[Dict[str, Any]]:
         """Retrieve cached response if available."""
+        if not redis:  # Skip caching in development mode
+            return None
         try:
             cached = await redis.get(key)
             if cached:
@@ -59,6 +64,8 @@ class MarketStackClient:
 
     async def _cache_response(self, key: str, data: Dict[str, Any], ttl: int = 3600) -> None:
         """Store API response in cache for a given time-to-live (TTL)."""
+        if not redis:  # Skip caching in development mode
+            return
         try:
             cache_data: CacheData = {
                 'data': data,
@@ -81,18 +88,23 @@ class MarketStackClient:
         request_params = params.copy() if params is not None else {}
         request_params['access_key'] = self.api_key
 
+        # Initialize cache key
         cache_key = f"marketstack:{endpoint}:{json.dumps(request_params, sort_keys=True)}"
-        cached_response = await self._get_cached_response(cache_key)
-        if cached_response:
-            return cached_response
+
+        # Skip caching in development mode
+        if os.getenv("ENVIRONMENT") != "development":
+            cached_response = await self._get_cached_response(cache_key)
+            if cached_response:
+                return cached_response
 
         try:
             response = await self.client.get(f"{self.base_url}/{endpoint}", params=request_params)
             response.raise_for_status()
             data = response.json()
 
-            # Cache successful response
-            await self._cache_response(cache_key, data, cache_ttl)
+            # Cache successful response if not in development mode
+            if os.getenv("ENVIRONMENT") != "development":
+                await self._cache_response(cache_key, data, cache_ttl)
             return data
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 429:  # Rate limit exceeded

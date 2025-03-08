@@ -40,7 +40,7 @@ class NewsCompanyMention(Base):
     __table_args__ = {'schema': 'stocksight'}
 
     id = Column(Integer, primary_key=True, index=True)
-    article_id = Column(Integer, ForeignKey("news_articles.id"))
+    article_id = Column(Integer, ForeignKey("stocksight.news_articles.id"))
     company_symbol = Column(String, nullable=False)
     relevance_score = Column(Float, nullable=False)
     mention_count = Column(Integer, default=1)
@@ -60,6 +60,7 @@ class NewsImpactAnalysis(Base):
     __table_args__ = {'schema': 'stocksight'}
 
     id = Column(Integer, primary_key=True, index=True)
+    article_id = Column(Integer, ForeignKey("stocksight.news_articles.id"))
     company_symbol = Column(String, nullable=False)
     avg_sentiment = Column(Float, nullable=False)
     price_impact_correlation = Column(Float, nullable=False)

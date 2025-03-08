@@ -6,6 +6,7 @@ from services.market_data import MarketDataService
 from api.schemas.market import MarketTrends, MarketMetrics, IPOInsights
 from api.auth import get_current_user
 from config.database import get_db
+import os
 
 router = APIRouter(
     prefix="/market",
@@ -19,7 +20,8 @@ router = APIRouter(
 @router.get("/trends", response_model=MarketTrends)
 async def get_market_trends(
     index: str = Query(..., description="Market index to analyze (e.g., BIOTECH)"),
-    timeframe: str = Query("1m", description="Analysis timeframe (1d, 1w, 1m, 3m, 1y)")
+    timeframe: str = Query("1m", description="Analysis timeframe (1d, 1w, 1m, 3m, 1y)"),
+    current_user = Depends(get_current_user) if os.getenv("ENVIRONMENT") != "development" else None
 ):
     """Get market trends for a specific index and timeframe."""
     async with MarketDataService() as market_service:

@@ -6,6 +6,7 @@ from config.database import Base
 class User(Base):
     """User model for authentication and tracking preferences"""
     __tablename__ = "users"
+    __table_args__ = {'schema': 'stocksight'}
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)

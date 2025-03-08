@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 30
     
+    # Environment Settings
+    pythonpath: Optional[str] = None
+    virtual_env: Optional[str] = None
+    
     class Config:
         env_file = os.path.join(BACKEND_DIR, ".env")
         env_required = ["marketstack_api_key", "serper_api_key", "database_url"]

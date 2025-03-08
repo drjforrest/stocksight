@@ -3,13 +3,15 @@ from sqlalchemy.orm import relationship
 from pydantic import BaseModel
 from datetime import datetime
 from config.database import Base
+from models.user import User
 
 # SQLAlchemy Model
 class TrackedCompany(Base):
     __tablename__ = "tracked_companies"
+    __table_args__ = {'schema': 'stocksight'}
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("stocksight.users.id"), nullable=False)
     company_symbol = Column(String, nullable=False)
     added_at = Column(DateTime, server_default=func.now(), nullable=False)
 

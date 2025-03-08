@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from fastapi.responses import JSONResponse
 
 from config.database import get_db
-from models.tracked_company import TrackedCompany, TrackedCompanyCreate
+from models.tracked_company import TrackedCompany, TrackedCompanyCreate, TrackedCompanyResponse
 from services.news import NewsService
 from services.market_data import MarketDataService
 from services.cache import CacheService
@@ -31,7 +31,7 @@ async def check_refresh_rate_limit(symbol: str) -> bool:
     await cache.aset(cache_key, datetime.utcnow().isoformat(), expire=43200)  # 12 hours
     return True
 
-@router.post("/{user_id}/{symbol}", response_model=TrackedCompany)
+@router.post("/{user_id}/{symbol}", response_model=TrackedCompanyResponse)
 async def add_tracked_company(
     user_id: int,
     symbol: str,
@@ -46,7 +46,7 @@ async def add_tracked_company(
         db: Database session
         
     Returns:
-        TrackedCompany: The newly created tracked company entry
+        TrackedCompanyResponse: The newly created tracked company entry
         
     Raises:
         HTTPException: If company is already being tracked
