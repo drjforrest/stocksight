@@ -7,6 +7,7 @@ import IPOInsights from "./IPOInsights";
 import { Card, CardContent } from "./ui/card";
 import { getMarketTrends, getStockPrices, getIPOListings, getFeatureFlags } from "@/lib/api-functions";
 import { mockLogin } from "@/lib/auth";
+import Welcome from './Welcome';
 
 type TabType = 'overview' | 'market' | 'ipo';
 
@@ -45,6 +46,8 @@ export default function Dashboard() {
     loading: true,
     error: null
   });
+  const [hasTrackedCompanies, setHasTrackedCompanies] = useState(false);
+  const userId = 1; // TODO: Get from auth context
 
   // Handle authentication on mount
   useEffect(() => {
@@ -58,6 +61,25 @@ export default function Dashboard() {
 
     initAuth();
   }, []);
+
+  useEffect(() => {
+    // Check if user has any tracked companies
+    const checkTrackedCompanies = async () => {
+      try {
+        const response = await fetch(`/api/tracked/${userId}`);
+        const data = await response.json();
+        setHasTrackedCompanies(data.length > 0);
+      } catch (error) {
+        console.error('Error checking tracked companies:', error);
+      }
+    };
+
+    checkTrackedCompanies();
+  }, []);
+
+  if (!hasTrackedCompanies) {
+    return <Welcome />;
+  }
 
   // Fetch market data
   useEffect(() => {

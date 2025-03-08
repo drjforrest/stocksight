@@ -7,6 +7,7 @@ interface CardProps {
 
 interface CardContentProps {
   children: React.ReactNode;
+  className?: string;
 }
 
 function Card({ children, className = "" }: CardProps) {
@@ -17,8 +18,8 @@ function Card({ children, className = "" }: CardProps) {
   );
 }
 
-function CardContent({ children }: CardContentProps) {
-  return <div className="mt-2">{children}</div>;
+function CardContent({ children, className = "" }: CardContentProps) {
+  return <div className={`mt-2 ${className}`}>{children}</div>;
 }
 
 export { Card, CardContent };

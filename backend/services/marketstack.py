@@ -10,9 +10,9 @@ from config.settings import get_settings
 
 settings = get_settings()
 
-# Initialize Redis for caching API responses if not in development mode
+# Initialize Redis for caching API responses if enabled
 redis = None
-if os.getenv("ENVIRONMENT") != "development":
+if os.getenv("REDIS_ENABLED", "").lower() == "true":
     redis = aioredis.from_url(
         f"redis://{settings.redis_host}:{settings.redis_port}/{settings.redis_db}",
         encoding="utf-8",
@@ -50,7 +50,7 @@ class MarketStackClient:
 
     async def _get_cached_response(self, key: str) -> Optional[Dict[str, Any]]:
         """Retrieve cached response if available."""
-        if not redis:  # Skip caching in development mode
+        if not redis:  # Skip caching if Redis is not enabled
             return None
         try:
             cached = await redis.get(key)
@@ -64,7 +64,7 @@ class MarketStackClient:
 
     async def _cache_response(self, key: str, data: Dict[str, Any], ttl: int = 3600) -> None:
         """Store API response in cache for a given time-to-live (TTL)."""
-        if not redis:  # Skip caching in development mode
+        if not redis:  # Skip caching if Redis is not enabled
             return
         try:
             cache_data: CacheData = {
@@ -91,8 +91,8 @@ class MarketStackClient:
         # Initialize cache key
         cache_key = f"marketstack:{endpoint}:{json.dumps(request_params, sort_keys=True)}"
 
-        # Skip caching in development mode
-        if os.getenv("ENVIRONMENT") != "development":
+        # Try to get cached response if Redis is enabled
+        if redis:
             cached_response = await self._get_cached_response(cache_key)
             if cached_response:
                 return cached_response
@@ -102,8 +102,8 @@ class MarketStackClient:
             response.raise_for_status()
             data = response.json()
 
-            # Cache successful response if not in development mode
-            if os.getenv("ENVIRONMENT") != "development":
+            # Cache successful response if Redis is enabled
+            if redis:
                 await self._cache_response(cache_key, data, cache_ttl)
             return data
         except httpx.HTTPStatusError as e:

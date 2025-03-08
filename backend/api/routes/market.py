@@ -21,7 +21,7 @@ router = APIRouter(
 async def get_market_trends(
     index: str = Query(..., description="Market index to analyze (e.g., BIOTECH)"),
     timeframe: str = Query("1m", description="Analysis timeframe (1d, 1w, 1m, 3m, 1y)"),
-    current_user = Depends(get_current_user) if os.getenv("ENVIRONMENT") != "development" else None
+    current_user = Depends(get_current_user)
 ):
     """Get market trends for a specific index and timeframe."""
     async with MarketDataService() as market_service:

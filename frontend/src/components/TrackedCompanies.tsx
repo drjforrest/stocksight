@@ -201,8 +201,18 @@ export default function TrackedCompanies() {
 
       {/* News Feed */}
       {tracked.length === 0 ? (
-        <div className="text-center text-gray-500">
-          No companies tracked yet. Add some competitors to get started!
+        <div className="text-center py-12 bg-white rounded-lg shadow-md">
+          <h3 className="text-2xl font-semibold mb-4">Start Tracking Companies</h3>
+          <p className="text-gray-600 mb-6 max-w-md mx-auto">
+            Track companies to get real-time updates, news, and market insights. Click the "Add Competitor" button above to get started.
+          </p>
+          <button
+            onClick={() => setShowSearch(true)}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 mx-auto"
+          >
+            <FaPlus />
+            Add Your First Company
+          </button>
         </div>
       ) : (
         tracked.map(symbol => (

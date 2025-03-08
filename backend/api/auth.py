@@ -31,7 +31,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 async def get_current_user(token: Optional[str] = Depends(oauth2_scheme)) -> Dict:
     """Get the current user from the JWT token."""
     # Development bypass
-    if os.getenv("ENVIRONMENT") != "production":
+    if os.getenv("ENVIRONMENT") == "development":
         return {"sub": "test_user", "is_dev": True}
         
     if not token:
